@@ -5,6 +5,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -25,16 +26,50 @@ import dev.dotingo.receptory.ui.icons.PasswordIcon
 
 @Composable
 fun ReceptoryInputField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
-    placeholder: String,
-    icon: ImageVector,
+    label: String = "",
+    icon: ImageVector? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     TextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        singleLine = true,
+        keyboardOptions = keyboardOptions,
+        colors = TextFieldDefaults.colors(
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            errorIndicatorColor = Color.Transparent
+        ),
+        leadingIcon = if (icon != null) {
+            {
+                Icon(imageVector = icon, contentDescription = label)
+            }
+        } else {
+            null
+        },
+        label = { Text(text = label) }
+    )
+}
+
+@Composable
+fun ReceptoryLargeInputField(
+    modifier: Modifier = Modifier,
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         keyboardOptions = keyboardOptions,
         colors = TextFieldDefaults.colors(
@@ -43,8 +78,8 @@ fun ReceptoryInputField(
             disabledIndicatorColor = Color.Transparent,
             errorIndicatorColor = Color.Transparent
         ),
-        leadingIcon = { Icon(imageVector = icon, contentDescription = placeholder) },
-        placeholder = { Text(text = placeholder) }
+        label = { Text(label) },
+        minLines = 5
     )
 }
 
@@ -52,6 +87,9 @@ fun ReceptoryInputField(
 fun ReceptoryPasswordInputField(
     password: String,
     onPasswordChange: (String) -> Unit,
+    label: String,
+    isError: Boolean = false,
+    supportingText: String? = null,
     passwordVisibility: Boolean,
     onVisibilityChange: () -> Unit
 ) {
@@ -60,11 +98,24 @@ fun ReceptoryPasswordInputField(
         onValueChange = onPasswordChange,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
+        singleLine = true,
+        isError = isError,
+        supportingText = if (supportingText != null) {
+            {
+                Text(supportingText)
+            }
+        } else {
+            null
+        },
         colors = TextFieldDefaults.colors(
             unfocusedIndicatorColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
-            errorIndicatorColor = Color.Transparent
+            errorIndicatorColor = Color.Transparent,
+            errorLeadingIconColor = MaterialTheme.colorScheme.onErrorContainer,
+            errorTextColor = MaterialTheme.colorScheme.onErrorContainer,
+            errorTrailingIconColor = MaterialTheme.colorScheme.onErrorContainer,
+            errorContainerColor = MaterialTheme.colorScheme.errorContainer
         ),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
@@ -85,6 +136,6 @@ fun ReceptoryPasswordInputField(
                 )
             }
         },
-        placeholder = { Text(text = stringResource(R.string.password)) }
+        label = { Text(text = label) }
     )
 }

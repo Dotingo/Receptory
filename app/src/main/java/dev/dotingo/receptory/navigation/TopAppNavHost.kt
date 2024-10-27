@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dev.dotingo.receptory.presentation.screens.EditRecipeScreen
 import dev.dotingo.receptory.presentation.screens.LoginScreen
 import dev.dotingo.receptory.presentation.screens.main_screen.MainScreen
 import dev.dotingo.receptory.presentation.screens.OnboardingScreen
@@ -72,6 +73,11 @@ fun TopAppNavHost(
                 navController.navigate(RecipeScreen) {
                     launchSingleTop = true
                 }
+            },
+            navigateToAddRecipeScreen = {
+                navController.navigate(EditRecipeScreen){
+                    launchSingleTop
+                }
             }
         )
     }
@@ -82,6 +88,12 @@ fun TopAppNavHost(
                 navigateBack(navController)
             }
         )
+    }
+
+    composable<EditRecipeScreen> {
+        EditRecipeScreen {
+            navigateBack(navController)
+        }
     }
 }
 

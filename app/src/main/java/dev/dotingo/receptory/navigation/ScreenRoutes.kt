@@ -19,3 +19,6 @@ object MainScreen
 
 @Serializable
 object RecipeScreen
+
+@Serializable
+object EditRecipeScreen

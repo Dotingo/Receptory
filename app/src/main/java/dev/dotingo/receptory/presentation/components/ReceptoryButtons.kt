@@ -16,45 +16,34 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
+import androidx.compose.ui.graphics.Color
 import dev.dotingo.receptory.ui.icons.GoogleLogo
 
 @Composable
 fun ReceptoryMainButton(
     modifier: Modifier = Modifier,
+    textModifier: Modifier = Modifier,
     text: String, onClick: () -> Unit
 ) {
     Button(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = RoundedCornerShape(12.dp)
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(vertical = 10.dp),
+            modifier = textModifier,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontWeight = FontWeight.Bold,
         )
     }
-}
-
-@Composable
-fun ClickableText(text: String, onClick: () -> Unit) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onBackground,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier
-            .alpha(0.5f)
-            .clickable(onClick = onClick)
-    )
 }
 
 @Composable
@@ -73,4 +62,20 @@ fun GoogleSignInButton(onClick: () -> Unit = {}) {
             contentDescription = stringResource(R.string.google)
         )
     }
+}
+
+@Composable
+fun ClickableText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = MaterialTheme.colorScheme.onBackground,
+    fontWeight: FontWeight,
+    onClick: () -> Unit
+) {
+    Text(
+        text = text,
+        color = color,
+        fontWeight = fontWeight,
+        modifier = modifier.clickable(onClick = onClick)
+    )
 }

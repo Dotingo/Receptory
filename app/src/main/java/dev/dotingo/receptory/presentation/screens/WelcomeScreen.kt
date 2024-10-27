@@ -3,6 +3,7 @@ package dev.dotingo.receptory.presentation.screens
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
@@ -53,6 +55,8 @@ fun WelcomeScreen(modifier: Modifier = Modifier, navigateToOnboardingScreen: () 
             )
         }
         ReceptoryMainButton(
+            modifier = Modifier.fillMaxWidth(),
+            textModifier = Modifier.padding(vertical = 10.dp),
             text = stringResource(R.string.start_now_button)
         ) {
             navigateToOnboardingScreen()

@@ -9,7 +9,8 @@ object Dimens {
 
     val circleIconContainerSize = 35.dp
 
-    val mediumPadding = 25.dp
+    val bigPadding = 25.dp
+    val mediumPadding = 15.dp
     val smallPadding = 10.dp
     val extraSmallPadding = 5.dp
     val tinyPadding = 3.dp
@@ -18,6 +19,7 @@ object Dimens {
     val mediumImageSize = 250.dp
     val smallMediumImageSize = 150.dp
 
+    val extraBigIconSize = 30.dp
     val bigIconSize = 22.dp
     val mediumIconSize = 16.dp
     val smallMediumIconSize  = 14.dp

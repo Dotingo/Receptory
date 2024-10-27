@@ -3,7 +3,7 @@
     <string name="info_title_recipe">Добавляйте ваши рецепты</string>
     <string name="info_description_recipe">Записывайте рецепты на любой вкус</string>
     <string name="info_title_cooking">Готовьте вместе с приложением</string>
-    <string name="info_description_cooking">Используйте функции для засекания времени, отмечайте ингрeдиенты</string>
+    <string name="info_description_cooking">Используйте функции для засекания времени, отмечайте ингрeдиенты и шаги готовки</string>
     <string name="info_title_shoppinglist">Создавайте списки покупок</string>
     <string name="info_description_shoppinglist">Создавайте и добавляйте в списки покупок ингрeдиенты или другие товары, необходимые для готовки</string>
     <string name="info_title_search">Ищите ваши рецепты</string>
@@ -40,4 +40,20 @@
     <string name="all_category">Все</string>
     <string name="kcal">%1$sккал</string>
     <string name="search_placeholder">Поиск</string>
+    <string name="site_link">Ссылка на сайт</string>
+    <string name="video_link">Ссылка на видео</string>
+    <string name="recipe_description">Описание</string>
+    <string name="general_information">Общие сведения</string>
+    <string name="cooking_time">"Время готовки: "</string>
+    <string name="portions">"Порции"</string>
+    <string name="calories">"Калории"</string>
+    <string name="ingredients">Ингредиенты</string>
+    <string name="cooking_recipe">Рецепт приготовления</string>
+    <string name="stage">Этап %1$s</string>
+    <string name="add">Добавить</string>
+    <string name="recipe_name">Название</string>
+    <string name="add_image">Добавить изображение</string>
+    <string name="clear_image">Убрать изображение</string>
+    <string name="repeat_password">Повторите пароль</string>
+    <string name="add_interner_recipe">Добавить рецепт из интернета</string>
 </resources>

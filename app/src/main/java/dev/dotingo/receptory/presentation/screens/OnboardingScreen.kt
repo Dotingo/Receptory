@@ -30,7 +30,7 @@ import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.ui.theme.Dimens.bigIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
-import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
+import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.icons.CookingIcons
 import dev.dotingo.receptory.ui.icons.FolderIcon
@@ -60,8 +60,11 @@ fun OnboardingScreen(
         }, bottomBar = {
             ReceptoryMainButton(
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = smallPadding)
                     .padding(horizontal = commonHorizontalPadding)
                     .navigationBarsPadding(),
+                textModifier = Modifier.padding(smallPadding),
                 text = stringResource(R.string.understood_button)
             ) {
                 navigateToRegistrationScreen()
@@ -115,7 +118,7 @@ fun InfoTextWithLabel(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = mediumPadding),
+            .padding(top = bigPadding),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(

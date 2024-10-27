@@ -50,6 +50,10 @@ android {
 
 dependencies {
 
+    implementation ("com.nulab-inc:zxcvbn:1.9.0")
+
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
+
     implementation (libs.lottie.compose)
 
     implementation(libs.kotlinx.serialization.json)

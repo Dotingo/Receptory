@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -18,10 +19,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.AuthHeader
 import dev.dotingo.receptory.presentation.components.ClickableText
@@ -32,7 +36,7 @@ import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.presentation.components.ReceptoryPasswordInputField
 import dev.dotingo.receptory.presentation.components.SwitchAuthModeText
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
-import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
+import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.icons.EmailIcon
 import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
@@ -59,37 +63,46 @@ fun LoginScreen(
             stringResource(R.string.login_title),
             stringResource(R.string.welcome_back)
         )
-        Spacer(modifier = Modifier.height(mediumPadding))
+        Spacer(modifier = Modifier.height(bigPadding))
         ReceptoryInputField(
             value = email,
             onValueChange = { email = it },
-            placeholder = stringResource(R.string.tf_email),
+            label = stringResource(R.string.tf_email),
             icon = EmailIcon,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             )
         )
-        Spacer(modifier = Modifier.height(mediumPadding))
+        Spacer(modifier = Modifier.height(bigPadding))
         ReceptoryPasswordInputField(
             password = password,
             onPasswordChange = { password = it },
+            label = stringResource(R.string.password),
+            isError = false,
             passwordVisibility = passwordVisibility,
             onVisibilityChange = { passwordVisibility = !passwordVisibility }
         )
-        Spacer(modifier = Modifier.height(mediumPadding))
+        Spacer(modifier = Modifier.height(bigPadding))
         ReceptoryMainButton(
+            modifier = Modifier.fillMaxWidth(),
+            textModifier = Modifier.padding(vertical = 10.dp),
             text = stringResource(R.string.login_bt)
         ) {
 
         }
-        Spacer(modifier = Modifier.height(mediumPadding))
-        ClickableText(text = stringResource(R.string.continue_without_login)){
+        Spacer(modifier = Modifier.height(bigPadding))
+        ClickableText(
+            modifier = Modifier.alpha(0.5f),
+            text = stringResource(R.string.continue_without_login),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.SemiBold
+        ) {
             navigateToMainScreen()
         }
-        Spacer(modifier = Modifier.height(mediumPadding))
+        Spacer(modifier = Modifier.height(bigPadding))
         OrDivider()
-        Spacer(modifier = Modifier.height(mediumPadding))
+        Spacer(modifier = Modifier.height(bigPadding))
         GoogleSignInButton()
         Spacer(modifier = Modifier.weight(1f))
         SwitchAuthModeText(stringResource(R.string.no_account), stringResource(R.string.register)) {

@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.ui.theme.Dimens.smallMediumImageSize
-import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
+import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.icons.AppIcon
 
@@ -32,7 +32,7 @@ fun AuthHeader(title: String, description: String) {
         imageVector = AppIcon,
         modifier = Modifier
             .size(smallMediumImageSize)
-            .padding(vertical = mediumPadding),
+            .padding(vertical = bigPadding),
         contentDescription = null
     )
     Text(

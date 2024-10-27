@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
@@ -36,21 +37,22 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.presentation.components.RecipeSearchBar
-import dev.dotingo.receptory.ui.theme.Dimens.bigImageSize
-import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
-import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
-import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
-import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.icons.RecipePlaceholder
 import dev.dotingo.receptory.ui.icons.arrows.DownArrowIcon
+import dev.dotingo.receptory.ui.theme.Dimens.bigImageSize
+import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
+import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
+import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
-    navigateToRecipeScreen: () -> Unit
+    navigateToRecipeScreen: () -> Unit,
+    navigateToAddRecipeScreen: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -76,7 +78,9 @@ fun MainScreen(
             })
         }, bottomBar = {
             ReceptoryBottomBar(
-                onAddRecipeButtonClick = {},
+                onAddRecipeButtonClick = {
+                    navigateToAddRecipeScreen()
+                },
                 onShoppingListClick = {},
                 onSettingsClick = {}
             )
@@ -109,7 +113,6 @@ fun RecipeContent(innerPadding: PaddingValues, navigateToRecipeScreen:() -> Unit
             onFilterClicked = {},
             onFavoriteClicked = {}
         )
-
         LazyColumn {
             items(10) {
                 RecipeCard(
@@ -164,8 +167,10 @@ private fun EmptyMenuScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(mediumPadding))
+        Spacer(modifier = Modifier.height(bigPadding))
         ReceptoryMainButton(
+            modifier = Modifier.fillMaxWidth(),
+            textModifier = Modifier.padding(vertical = 10.dp),
             text = stringResource(R.string.add_recipe)
         ) {
             onAddRecipeClicked()
@@ -177,6 +182,6 @@ private fun EmptyMenuScreen(
 @Composable
 private fun MainScreenPreview() {
     ReceptoryTheme {
-        MainScreen(){}
+        MainScreen(navigateToRecipeScreen = {}){}
     }
 }

@@ -3,16 +3,18 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.devtoolsKsp)
+    alias(libs.plugins.daggerHilt)
 }
 
 android {
     namespace = "dev.dotingo.receptory"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.dotingo.receptory"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -49,10 +51,16 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
 
-    implementation ("com.nulab-inc:zxcvbn:1.9.0")
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
+    implementation(libs.androidx.hilt.lifecycle.viewmodel)
+    ksp(libs.androidx.hilt.compiler)
+
+    implementation (libs.zxcvbn)
 
     implementation (libs.lottie.compose)
 

@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,12 +43,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
+import dev.dotingo.receptory.presentation.components.ReceptoryButton
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryLargeInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
@@ -58,7 +64,6 @@ import dev.dotingo.receptory.ui.icons.WebIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteBoldIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteOutlinedIcon
-import dev.dotingo.receptory.ui.theme.Dimens.bigIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraBigIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
@@ -73,6 +78,7 @@ import dev.dotingo.receptory.ui.theme.starColor
 fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
+    var cookingTime by rememberSaveable { mutableStateOf("") }
     var portions by rememberSaveable { mutableStateOf("") }
     var kcal by rememberSaveable { mutableStateOf("") }
     var ingredients by rememberSaveable { mutableStateOf("") }
@@ -82,7 +88,7 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
     var isFavorite by rememberSaveable { mutableStateOf(false) }
     var isImageVisible by rememberSaveable { mutableStateOf(false) }
     var rating by remember { mutableStateOf(0) }
-    
+
     Scaffold(topBar = {
         CenterAlignedTopAppBar(
             title = { Text(stringResource(R.string.add_recipe)) },
@@ -96,22 +102,22 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 }
             },
             actions = {
-                CircleIcon(
-                    modifier = Modifier.padding(end = smallPadding),
-                    imageVector = WebIcon,
-                    contentDescription = stringResource(R.string.add_interner_recipe)
+                IconButton(
+                    onClick = {}
                 ) {
-
+                    Icon(
+                        imageVector = WebIcon,
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        contentDescription = stringResource(R.string.add_interner_recipe)
+                    )
                 }
             })
     }, bottomBar = {
         ReceptoryMainButton(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = smallPadding)
                 .padding(horizontal = commonHorizontalPadding)
+                .padding(top = smallPadding)
                 .navigationBarsPadding(),
-            textModifier = Modifier.padding(vertical = smallPadding),
             text = stringResource(R.string.add)
         ) {
 
@@ -165,7 +171,7 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             if (isImageVisible) {
                 Image(
                     imageVector = RecipePlaceholder,
-                    contentDescription = "",
+                    contentDescription = "Изображение рецепта",
                     modifier = Modifier
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(12.dp)),
@@ -174,9 +180,7 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 Spacer(Modifier.height(mediumPadding))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ReceptoryMainButton(
-                    modifier = Modifier,
-                    textModifier = Modifier,
+                ReceptoryButton(
                     text = stringResource(R.string.add_image)
                 ) { isImageVisible = true }
                 if (isImageVisible) {
@@ -202,18 +206,66 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 label = stringResource(R.string.recipe_description)
             )
             Spacer(Modifier.height(mediumPadding))
-            PortionsAndCaloriesRow(portions, kcal)
+            ReceptoryInputField(
+                value = cookingTime,
+                onValueChange = { cookingTime = it },
+                label = stringResource(R.string.cooking_time)
+            )
+            Spacer(Modifier.height(mediumPadding))
+            Row {
+                ReceptoryInputField(
+                    modifier = Modifier.weight(1f),
+                    value = portions,
+                    onValueChange = { portions = it },
+                    label = stringResource(R.string.portions),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    )
+                )
+                Spacer(Modifier.width(mediumPadding))
+                ReceptoryInputField(
+                    modifier = Modifier.weight(1f),
+                    value = kcal,
+                    onValueChange = { kcal = it },
+                    label = stringResource(R.string.calories),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    )
+                )
+            }
             Spacer(Modifier.height(mediumPadding))
             ReceptoryLargeInputField(
                 value = ingredients,
                 onValueChange = { ingredients = it },
                 label = stringResource(R.string.ingredients)
             )
+            Text(
+                buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                        append(stringResource(R.string.help))
+                    }
+                    append(stringResource(R.string.ingredients_help))
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = extraSmallPadding)
+            )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryLargeInputField(
                 value = recipe,
                 onValueChange = { recipe = it },
                 label = stringResource(R.string.cooking_recipe)
+            )
+            Text(
+                buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                        append(stringResource(R.string.help))
+                    }
+                    append(stringResource(R.string.cooking_help))
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = extraSmallPadding)
             )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(
@@ -235,37 +287,7 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                     imeAction = ImeAction.Done
                 )
             )
-
         }
-    }
-}
-
-@Composable
-private fun PortionsAndCaloriesRow(portions: String, kcal: String) {
-    var portions1 = portions
-    var kcal1 = kcal
-    Row {
-        ReceptoryInputField(
-            modifier = Modifier.weight(1f),
-            value = portions1,
-            onValueChange = { portions1 = it },
-            label = stringResource(R.string.portions),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Next
-            )
-        )
-        Spacer(Modifier.width(mediumPadding))
-        ReceptoryInputField(
-            modifier = Modifier.weight(1f),
-            value = kcal1,
-            onValueChange = { kcal1 = it },
-            label = stringResource(R.string.calories),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Next
-            )
-        )
     }
 }
 
@@ -276,33 +298,39 @@ fun RatingBar(
     onRatingChanged: (Int) -> Unit
 ) {
     var currentRating by remember { mutableIntStateOf(rating) }
-    Row(modifier = modifier.pointerInput(Unit) {
-        detectDragGestures { change, _ ->
-            val position = change.position.x
-            val newRating = (position / extraBigIconSize.toPx()).toInt() + 1
-            currentRating = newRating.coerceIn(1, 5)
-            onRatingChanged(currentRating)
-        }
-    }) {
-        val interactionSource = remember { MutableInteractionSource() }
-        repeat(5) { index ->
-            Icon(
-                imageVector = StarIcon,
-                contentDescription = "Рейтинг $index",
-                modifier = Modifier
-                    .size(extraBigIconSize)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) {
-                        onRatingChanged(index + 1)
-                    },
-                tint = if (index < rating) {
-                    starColor
-                } else {
-                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                }
-            )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = modifier.pointerInput(Unit) {
+            detectDragGestures { change, _ ->
+                val position = change.position.x
+                val newRating = (position / extraBigIconSize.toPx()).toInt() + 1
+                currentRating = newRating.coerceIn(1, 5)
+                onRatingChanged(currentRating)
+            }
+        }) {
+            val interactionSource = remember { MutableInteractionSource() }
+            repeat(5) { index ->
+                Icon(
+                    imageVector = StarIcon,
+                    contentDescription = "Рейтинг $index",
+                    modifier = Modifier
+                        .size(extraBigIconSize)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null
+                        ) {
+                            if ((rating - 1) == index) {
+                                onRatingChanged(0)
+                            } else {
+                                onRatingChanged(index + 1)
+                            }
+                        },
+                    tint = if (index < rating) {
+                        starColor
+                    } else {
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                    }
+                )
+            }
         }
     }
 }

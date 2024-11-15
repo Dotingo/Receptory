@@ -13,7 +13,10 @@ import dev.dotingo.receptory.presentation.screens.main_screen.MainScreen
 import dev.dotingo.receptory.presentation.screens.OnboardingScreen
 import dev.dotingo.receptory.presentation.screens.RecipeScreen
 import dev.dotingo.receptory.presentation.screens.RegistrationScreen
+import dev.dotingo.receptory.presentation.screens.timer_screen.TimerScreen
 import dev.dotingo.receptory.presentation.screens.WelcomeScreen
+import dev.dotingo.receptory.presentation.screens.shopping_list_screen.ShoppingListScreen
+import dev.dotingo.receptory.presentation.screens.shopping_list_screen.ShoppingListsMenuScreen
 
 @Composable
 fun TopAppNavHost(
@@ -75,8 +78,18 @@ fun TopAppNavHost(
                 }
             },
             navigateToAddRecipeScreen = {
-                navController.navigate(EditRecipeScreen){
-                    launchSingleTop
+                navController.navigate(EditRecipeScreen) {
+                    launchSingleTop = true
+                }
+            },
+            navigateToShoppingListMenuScreen = {
+                navController.navigate(ShoppingListMenuScreen) {
+                    launchSingleTop = true
+                }
+            },
+            navigateToTimerScreen = {
+                navController.navigate(TimerScreen) {
+                    launchSingleTop = true
                 }
             }
         )
@@ -86,6 +99,11 @@ fun TopAppNavHost(
         RecipeScreen(
             navigateBack = {
                 navigateBack(navController)
+            },
+            navigateToShoppingListMenuScreen = {
+                navController.navigate(ShoppingListMenuScreen) {
+                    launchSingleTop = true
+                }
             }
         )
     }
@@ -94,6 +112,31 @@ fun TopAppNavHost(
         EditRecipeScreen {
             navigateBack(navController)
         }
+    }
+
+    composable<ShoppingListMenuScreen> {
+        ShoppingListsMenuScreen(
+            navigateBack = {
+                navigateBack(navController)
+            },
+            navigateToShoppingList = {
+                navController.navigate(ShoppingListScreen) {
+                    launchSingleTop = true
+                }
+            }
+        )
+    }
+
+    composable<ShoppingListScreen> {
+        ShoppingListScreen {
+            navigateBack(navController)
+        }
+    }
+
+    composable<TimerScreen> {
+        TimerScreen(navigateBack = {
+            navigateBack(navController)
+        })
     }
 }
 

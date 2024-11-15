@@ -17,15 +17,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
-import androidx.compose.ui.graphics.Color
 import dev.dotingo.receptory.ui.icons.GoogleLogo
+import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 
 @Composable
 fun ReceptoryMainButton(
+    modifier: Modifier = Modifier,
+    text: String,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Button(
+        modifier = modifier.fillMaxWidth(),
+        enabled = enabled,
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(smallPadding),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+fun ReceptoryButton(
     modifier: Modifier = Modifier,
     textModifier: Modifier = Modifier,
     text: String, onClick: () -> Unit

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -26,7 +25,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nulabinc.zxcvbn.Zxcvbn
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.AuthHeader
@@ -37,10 +35,10 @@ import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.presentation.components.ReceptoryPasswordInputField
 import dev.dotingo.receptory.presentation.components.SwitchAuthModeText
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
-import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.icons.EmailIcon
 import dev.dotingo.receptory.ui.icons.UserIcon
+import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
+import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
 @Composable
@@ -122,8 +120,6 @@ fun RegistrationScreen(
         )
         Spacer(modifier = Modifier.height(bigPadding))
         ReceptoryMainButton(
-            modifier = Modifier.fillMaxWidth(),
-            textModifier = Modifier.padding(vertical = 10.dp),
             text = stringResource(R.string.registration_bt)
         ) {
             validatePasswords()

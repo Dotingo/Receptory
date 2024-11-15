@@ -44,7 +44,7 @@
     <string name="video_link">Ссылка на видео</string>
     <string name="recipe_description">Описание</string>
     <string name="general_information">Общие сведения</string>
-    <string name="cooking_time">"Время готовки: "</string>
+    <string name="cooking_time">"Время готовки"</string>
     <string name="portions">"Порции"</string>
     <string name="calories">"Калории"</string>
     <string name="ingredients">Ингредиенты</string>
@@ -56,4 +56,11 @@
     <string name="clear_image">Убрать изображение</string>
     <string name="repeat_password">Повторите пароль</string>
     <string name="add_interner_recipe">Добавить рецепт из интернета</string>
+    <string name="help">"Подсказка: "</string>
+    <string name="ingredients_help">пишите разные ингридиенты с новых строк</string>
+    <string name="cooking_help">пишите этапы готовки с новых строк</string>
+    <string name="timer">Таймер</string>
+    <string name="add_timer">Добавить таймер</string>
+    <string name="cancel">Отмена</string>
+    <string name="ok">ОК</string>
 </resources>

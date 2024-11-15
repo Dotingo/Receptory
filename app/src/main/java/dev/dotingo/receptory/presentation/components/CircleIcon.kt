@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import dev.dotingo.receptory.ui.theme.Dimens.circleIconContainerSize
-import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.smallMediumIconSize
 
 @Composable
 fun CircleIcon(
@@ -24,7 +24,7 @@ fun CircleIcon(
     imageVector: ImageVector,
     contentDescription: String? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
-    iconSize: Dp = mediumIconSize,
+    iconSize: Dp = smallMediumIconSize,
     iconColor: Color = LocalContentColor.current,
     onClick: () -> Unit
 ) {

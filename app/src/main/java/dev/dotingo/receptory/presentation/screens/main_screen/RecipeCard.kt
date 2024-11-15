@@ -26,11 +26,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.ui.theme.Dimens.bigIconSize
-import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.smallMediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.recipeCardSize
-import dev.dotingo.receptory.ui.theme.Dimens.smallIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.extraSmallIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.ui.icons.KcalIcon
@@ -81,7 +81,7 @@ fun RecipeCard(
                         maxLines = 1,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(modifier = Modifier.size(bigIconSize),
+                    IconButton(modifier = Modifier.size(mediumIconSize),
                         onClick = {
 
                         }
@@ -99,7 +99,7 @@ fun RecipeCard(
                             Icon(
                                 StarIcon,
                                 "Рейтинг",
-                                modifier = Modifier.size(mediumIconSize),
+                                modifier = Modifier.size(smallMediumIconSize),
                                 tint = if (it < rating) {
                                     starColor
                                 } else MaterialTheme.colorScheme.onPrimaryContainer.copy(
@@ -113,7 +113,7 @@ fun RecipeCard(
                     if (kcal.isNotEmpty()) {
                         Icon(
                             KcalIcon, "Каллории",
-                            modifier = Modifier.size(smallIconSize)
+                            modifier = Modifier.size(extraSmallIconSize)
                         )
                         Spacer(modifier = Modifier.width(tinyPadding))
                         Text(

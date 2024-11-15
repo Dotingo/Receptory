@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import dev.dotingo.receptory.ui.theme.Dimens.bigIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.icons.FilterArrowIcon
@@ -67,7 +67,7 @@ fun RecipeSearchBar(
                     Text(
                         text = placeholder,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Unspecified.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -92,7 +92,7 @@ fun RecipeSearchBar(
                             Icon(
                                 imageVector = Icons.Default.Clear,
                                 contentDescription = null,
-                                modifier = Modifier.size(bigIconSize)
+                                modifier = Modifier.size(mediumIconSize)
                             )
                         }
                     }

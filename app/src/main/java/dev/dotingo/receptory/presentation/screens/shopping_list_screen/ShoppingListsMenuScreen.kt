@@ -15,7 +15,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,16 +24,25 @@ import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.ui.icons.PlusIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
+import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShoppingListsMenuScreen(modifier: Modifier = Modifier) {
+fun ShoppingListsMenuScreen(
+    modifier: Modifier = Modifier,
+    navigateBack: () -> Unit,
+    navigateToShoppingList: () -> Unit
+) {
     Scaffold(topBar = {
         CenterAlignedTopAppBar(title = { Text("Список покупок") },
             navigationIcon = {
-                CircleIcon(imageVector = BackArrowIcon, contentDescription = "Назад") {
-
+                CircleIcon(
+                    modifier = Modifier.padding(start = smallPadding),
+                    imageVector = BackArrowIcon,
+                    contentDescription = "Назад"
+                ) {
+                    navigateBack()
                 }
             }
         )
@@ -44,21 +52,22 @@ fun ShoppingListsMenuScreen(modifier: Modifier = Modifier) {
                 Icon(PlusIcon, "Добавить лист покупок")
             }
         }
-        ) {
+    ) {
         LazyColumn(
             contentPadding = it, modifier = Modifier.fillMaxSize()
         ) {
-            items(10) {
+            items(50) {
                 Card(
                     modifier = Modifier
                         .padding(horizontal = commonHorizontalPadding)
                         .fillMaxWidth(),
-                    shape = CircleShape
+                    onClick = {
+                        navigateToShoppingList()
+                    }
                 ) {
                     Row(modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)) {
                         Text(
-                            LoremIpsum().values.first().take(55),
-                            maxLines = 1,
+                            LoremIpsum().values.first().take(5 * it),
                             modifier = Modifier.weight(1f)
                         )
                         Text("1/6")
@@ -74,6 +83,8 @@ fun ShoppingListsMenuScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun ShoppingListsMenuScreenPreview() {
     ReceptoryTheme {
-        ShoppingListsMenuScreen()
+        ShoppingListsMenuScreen(navigateBack = {}) {
+
+        }
     }
 }

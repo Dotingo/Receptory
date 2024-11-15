@@ -22,3 +22,12 @@ object RecipeScreen
 
 @Serializable
 object EditRecipeScreen
+
+@Serializable
+object TimerScreen
+
+@Serializable
+object ShoppingListMenuScreen
+
+@Serializable
+object ShoppingListScreen

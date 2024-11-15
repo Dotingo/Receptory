@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
-import dev.dotingo.receptory.ui.theme.Dimens.bigIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
@@ -60,11 +60,9 @@ fun OnboardingScreen(
         }, bottomBar = {
             ReceptoryMainButton(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = smallPadding)
                     .padding(horizontal = commonHorizontalPadding)
+                    .padding(top = smallPadding)
                     .navigationBarsPadding(),
-                textModifier = Modifier.padding(smallPadding),
                 text = stringResource(R.string.understood_button)
             ) {
                 navigateToRegistrationScreen()
@@ -124,7 +122,7 @@ fun InfoTextWithLabel(
         Icon(
             imageVector = icon, contentDescription = null,
             tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.size(bigIconSize)
+            modifier = Modifier.size(mediumIconSize)
         )
         Spacer(modifier = Modifier.width(smallPadding))
         Column {

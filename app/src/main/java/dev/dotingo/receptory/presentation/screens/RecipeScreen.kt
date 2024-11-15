@@ -33,7 +33,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -55,15 +57,15 @@ import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.sp
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
-import dev.dotingo.receptory.presentation.components.ClickableText
 import dev.dotingo.receptory.ui.icons.EditIcon
 import dev.dotingo.receptory.ui.icons.RecipePlaceholder
 import dev.dotingo.receptory.ui.icons.ShareIcon
 import dev.dotingo.receptory.ui.icons.ShoppingListIcon
 import dev.dotingo.receptory.ui.icons.StarIcon
+import dev.dotingo.receptory.ui.icons.TimerIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteOutlinedIcon
-import dev.dotingo.receptory.ui.theme.Dimens.bigIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.bigImageSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
@@ -75,10 +77,17 @@ import dev.dotingo.receptory.ui.theme.starColor
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
+fun RecipeScreen(
+    modifier: Modifier = Modifier,
+    navigateBack: () -> Unit,
+    navigateToShoppingListMenuScreen: () -> Unit,
+) {
     val listState = rememberLazyListState()
     val firstVisibleIndex by remember {
         derivedStateOf { listState.firstVisibleItemIndex }
+    }
+    var showTimer by remember {
+        mutableStateOf(false)
     }
     Scaffold(topBar = {
         TopAppBar(
@@ -97,7 +106,7 @@ fun RecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 CircleIcon(
                     imageVector = FavoriteOutlinedIcon,
                     contentDescription = "Нравится",
-                    iconSize = bigIconSize
+                    iconSize = mediumIconSize
                 ) {
 
                 }
@@ -131,9 +140,13 @@ fun RecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
 
             item { RecipeInfo() }
 
-            item { IngredientsSection() }
+            item { IngredientsSection(navigateToShoppingListMenuScreen) }
 
-            item { CookingStepsSection() }
+            item {
+                CookingStepsSection(
+                    showTimer = showTimer,
+                    onShowTimerChange = { showTimer = it })
+            }
 
             item {
                 LinkSection(
@@ -149,6 +162,7 @@ fun RecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 )
             }
         }
+
     }
 }
 
@@ -212,7 +226,7 @@ private fun RecipeHeader() {
                     Icon(
                         StarIcon,
                         "Рейтинг",
-                        modifier = Modifier.size(bigIconSize),
+                        modifier = Modifier.size(mediumIconSize),
                         tint = starColor
                     )
                 }
@@ -261,7 +275,7 @@ private fun RecipeInfo() {
         Spacer(Modifier.height(smallPadding))
         Text(buildAnnotatedString {
             withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
-                append(stringResource(R.string.cooking_time))
+                append("${stringResource(R.string.cooking_time)}: ")
             }
             append("1 час 20 минут")
         }, style = MaterialTheme.typography.bodyLarge)
@@ -286,7 +300,7 @@ private fun RecipeInfo() {
 }
 
 @Composable
-private fun IngredientsSection() {
+private fun IngredientsSection(navigateToShoppingListMenuScreen: () -> Unit) {
     Column(
         modifier = Modifier
             .padding(horizontal = commonHorizontalPadding)
@@ -305,7 +319,7 @@ private fun IngredientsSection() {
                 backgroundColor = MaterialTheme.colorScheme.primary,
                 iconColor = MaterialTheme.colorScheme.onPrimary
             ) {
-
+                navigateToShoppingListMenuScreen()
             }
         }
         Spacer(Modifier.height(smallPadding))
@@ -327,7 +341,10 @@ private fun IngredientsSection() {
 }
 
 @Composable
-private fun CookingStepsSection() {
+private fun CookingStepsSection(
+    showTimer: Boolean,
+    onShowTimerChange: (Boolean) -> Unit
+) {
     val cookingSteps = listOf(
         LoremIpsum().values.first().take(50),
         LoremIpsum().values.first().take(100),
@@ -337,11 +354,23 @@ private fun CookingStepsSection() {
         modifier = Modifier
             .padding(horizontal = commonHorizontalPadding)
     ) {
-        Text(
-            stringResource(R.string.cooking_recipe),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                stringResource(R.string.cooking_recipe),
+                style = MaterialTheme.typography.headlineSmall
+            )
+            CircleIcon(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                imageVector = TimerIcon,
+                backgroundColor = MaterialTheme.colorScheme.primary,
+                iconColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                onShowTimerChange(true)
+            }
+        }
         repeat(cookingSteps.size) {
             Spacer(Modifier.height(smallPadding))
             Text(
@@ -409,8 +438,6 @@ private fun LinkSection(title: String, url: String) {
 @Composable
 private fun RecipeScreenPreview() {
     ReceptoryTheme {
-        RecipeScreen() {
-
-        }
+        RecipeScreen(navigateToShoppingListMenuScreen = {}, navigateBack = {})
     }
 }

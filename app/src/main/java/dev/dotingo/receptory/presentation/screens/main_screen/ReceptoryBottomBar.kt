@@ -25,17 +25,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.ui.theme.Dimens.bigIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.icons.PlusIcon
-import dev.dotingo.receptory.ui.icons.SettingsIcon
 import dev.dotingo.receptory.ui.icons.ShoppingListIcon
+import dev.dotingo.receptory.ui.icons.TimerIcon
 
 @Composable
 fun ReceptoryBottomBar(
     onAddRecipeButtonClick: () -> Unit,
     onShoppingListClick: () -> Unit,
-    onSettingsClick: () -> Unit,
+    onTimerClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -57,9 +57,9 @@ fun ReceptoryBottomBar(
                 onClick = onShoppingListClick
             )
             BottomBarItem(
-                icon = SettingsIcon,
-                text = stringResource(R.string.settings),
-                onClick = onSettingsClick
+                icon = TimerIcon,
+                text = stringResource(R.string.timer),
+                onClick = onTimerClick
             )
         }
 
@@ -86,7 +86,7 @@ fun BottomBarItem(icon: ImageVector, text: String, onClick: () -> Unit) {
         IconButton(onClick = onClick) {
             Icon(
                 icon, contentDescription = text,
-                modifier = Modifier.size(bigIconSize)
+                modifier = Modifier.size(mediumIconSize)
             )
         }
         Text(text)

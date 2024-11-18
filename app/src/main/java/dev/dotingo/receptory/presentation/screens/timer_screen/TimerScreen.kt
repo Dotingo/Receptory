@@ -1,9 +1,7 @@
 package dev.dotingo.receptory.presentation.screens.timer_screen
 
 import android.content.res.Configuration
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
+import android.media.MediaPlayer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,10 +47,10 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.ui.icons.ClearInputIcon
@@ -62,14 +60,20 @@ import dev.dotingo.receptory.ui.icons.PauseIcon
 import dev.dotingo.receptory.ui.icons.PlayIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
 import dev.dotingo.receptory.ui.icons.arrows.RefreshIcon
+import dev.dotingo.receptory.ui.theme.Dimens.buttonShapeSize
 import dev.dotingo.receptory.ui.theme.Dimens.circleTimerButtonSize
+import dev.dotingo.receptory.ui.theme.Dimens.circleTimerProgressLineSize
+import dev.dotingo.receptory.ui.theme.Dimens.circleTimerProgressSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraBigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.timerControlsButtonSize
+import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 import dev.dotingo.receptory.utils.clickVibration
+import dev.dotingo.receptory.utils.repeatVibration
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,7 +109,7 @@ fun TimerScreen(
             if (showTimer) {
                 TimerCard(
                     timerViewModel = timerViewModel,
-                    circleModifier = Modifier.size(250.dp)
+                    circleModifier = Modifier.size(circleTimerProgressSize)
                 )
                 Spacer(Modifier.weight(1f))
 
@@ -212,8 +216,8 @@ fun Keyboard(modifier: Modifier = Modifier, onKeyPress: (String) -> Unit) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         for (row in keys) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                modifier = Modifier.padding(top = 3.dp)
+                horizontalArrangement = Arrangement.spacedBy(tinyPadding),
+                modifier = Modifier.padding(top = tinyPadding)
             ) {
                 for (key in row) {
                     KeyButton(
@@ -261,19 +265,30 @@ fun TimerCard(
     circleColor: Color = MaterialTheme.colorScheme.primary,
     backCircleColor: Color = MaterialTheme.colorScheme.primaryContainer
 ) {
-
     val progress by timerViewModel.circleProgress.collectAsStateWithLifecycle()
-    val animatedProgress = remember { Animatable(initialValue = progress) }
     val timerText by timerViewModel.timerText.collectAsStateWithLifecycle()
+    val isTimerFinished by timerViewModel.isTimerFinished.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
-    LaunchedEffect(progress) {
-        animatedProgress.animateTo(
-            targetValue = progress,
-            animationSpec = tween(
-                durationMillis = 1000,
-                easing = LinearEasing
-            )
-        )
+    var mediaPlayer = remember {
+        MediaPlayer.create(context, R.raw.timer_alarm).apply {
+            isLooping = true
+        }
+    }
+
+    if (isTimerFinished) {
+        mediaPlayer.start()
+        @Suppress("KotlinConstantConditions")
+        LaunchedEffect(isTimerFinished) {
+            repeatVibration(context, isTimerFinished)
+        }
+    } else {
+        mediaPlayer.stop()
+        mediaPlayer.prepare()
+    }
+
+    LaunchedEffect(Unit) {
+        timerViewModel.startCountDownTimer()
     }
 
     Card(
@@ -284,23 +299,25 @@ fun TimerCard(
     ) {
         Box(
             modifier = Modifier
-                .padding(10.dp)
+                .padding(smallPadding)
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             CircleIcon(
                 imageVector = CloseIcon,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(mediumIconSize)
                     .align(Alignment.TopEnd),
                 backgroundColor = MaterialTheme.colorScheme.secondary,
                 iconColor = MaterialTheme.colorScheme.onSecondary
             ) {
+                mediaPlayer?.release()
+                mediaPlayer = null
                 timerViewModel.setShowTimer(false)
             }
             Box(
                 modifier = circleModifier
-                    .padding(top = 10.dp)
+                    .padding(top = smallPadding)
                     .aspectRatio(1f),
                 contentAlignment = Alignment.Center
             ) {
@@ -310,14 +327,20 @@ fun TimerCard(
                         startAngle = -90f,
                         sweepAngle = 360f,
                         useCenter = false,
-                        style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
+                        style = Stroke(
+                            width = circleTimerProgressLineSize.toPx(),
+                            cap = StrokeCap.Round
+                        )
                     )
                     drawArc(
                         color = circleColor,
+                        sweepAngle = 360 * progress,
                         startAngle = -90f,
-                        sweepAngle = 360 * animatedProgress.value,
                         useCenter = false,
-                        style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
+                        style = Stroke(
+                            width = circleTimerProgressLineSize.toPx(),
+                            cap = StrokeCap.Round
+                        )
                     )
                 }
                 Text(
@@ -354,23 +377,23 @@ fun TimerControls(
         modifier = modifier,
         horizontalArrangement = Arrangement.Center
     ) {
-        Button(
-            onClick = { timerViewModel.addMinute() },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ),
-            modifier = Modifier.height(55.dp),
-            shape = RoundedCornerShape(12.dp),
-        ) {
-            Text(
-                "+1:00", color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontWeight = FontWeight.Bold
-            )
+        if (!isFinished) {
+            Button(
+                onClick = { timerViewModel.addMinute() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                ),
+                modifier = Modifier.height(timerControlsButtonSize),
+                shape = RoundedCornerShape(buttonShapeSize),
+            ) {
+                Text(
+                    "+1:00", color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.width(extraSmallPadding))
         }
-        Spacer(Modifier.width(extraSmallPadding))
-        LaunchedEffect(Unit) {
-            timerViewModel.startCountDownTimer()
-        }
+
         Button(
             onClick = {
                 if (isPlaying) {
@@ -384,8 +407,8 @@ fun TimerControls(
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
             ),
-            modifier = Modifier.height(55.dp),
-            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.height(timerControlsButtonSize),
+            shape = RoundedCornerShape(buttonShapeSize),
         ) {
             Icon(
                 imageVector = if (isPlaying) {

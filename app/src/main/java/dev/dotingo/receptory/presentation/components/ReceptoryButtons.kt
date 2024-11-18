@@ -20,9 +20,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.ui.icons.GoogleLogo
+import dev.dotingo.receptory.ui.theme.Dimens.buttonShapeSize
+import dev.dotingo.receptory.ui.theme.Dimens.googleSignInButtonSize
+import dev.dotingo.receptory.ui.theme.Dimens.largeMediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 
 @Composable
@@ -37,7 +39,7 @@ fun ReceptoryMainButton(
         enabled = enabled,
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(buttonShapeSize)
     ) {
         Text(
             text = text,
@@ -59,7 +61,7 @@ fun ReceptoryButton(
         modifier = modifier,
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(buttonShapeSize)
     ) {
         Text(
             text = text,
@@ -76,14 +78,14 @@ fun GoogleSignInButton(onClick: () -> Unit = {}) {
     Box(
         modifier = Modifier
             .clip(CircleShape)
-            .size(60.dp)
+            .size(googleSignInButtonSize)
             .background(MaterialTheme.colorScheme.tertiaryContainer)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Image(
             imageVector = GoogleLogo,
-            modifier = Modifier.size(25.dp),
+            modifier = Modifier.size(largeMediumIconSize),
             contentDescription = stringResource(R.string.google)
         )
     }

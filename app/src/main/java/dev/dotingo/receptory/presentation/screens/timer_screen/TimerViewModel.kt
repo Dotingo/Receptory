@@ -49,17 +49,19 @@ class TimerViewModel : ViewModel() {
         if (_timeLeft.value == 0L) {
             _timeLeft.value = calculateInitialTimeInMillis()
         }
-        _countDownTimer = object : CountDownTimer(_timeLeft.value, 1000L) {
+        _countDownTimer = object : CountDownTimer(_timeLeft.value, 10L) {
             override fun onTick(currentTimeLeft: Long) {
-                _timerText.value = currentTimeLeft.timeFormat()
+                _timerText.value = (currentTimeLeft + 1000L).timeFormat()
                 _timeLeft.value = currentTimeLeft
+
                 _circleProgress.value =
-                    ((currentTimeLeft / 1000) * 1000) / calculateInitialTimeInMillis().toFloat()
+                    maxOf(0f, currentTimeLeft / calculateInitialTimeInMillis().toFloat())
             }
 
             override fun onFinish() {
                 _isTimerFinished.value = true
                 _timerText.value = "00:00:00"
+                _circleProgress.value = 0f
                 _isPlaying.value = false
             }
         }
@@ -90,5 +92,17 @@ class TimerViewModel : ViewModel() {
 
     fun addMinute() {
         _userInputMinute.value += 1
+
+        if (_isPlaying.value) {
+            _countDownTimer?.cancel()
+            _timeLeft.value += TimeUnit.MINUTES.toMillis(1)
+            _timerText.value = _timeLeft.value.timeFormat()
+            startCountDownTimer()
+        } else {
+            _countDownTimer?.cancel()
+            _timeLeft.value += TimeUnit.MINUTES.toMillis(1)
+            _timerText.value = _timeLeft.value.timeFormat()
+        }
     }
+
 }

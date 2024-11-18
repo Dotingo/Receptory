@@ -8,6 +8,11 @@ object Dimens {
     val recipeCardSize = 100.dp
     val circleTimerButtonSize = 100.dp
     val circleIconContainerSize = 35.dp
+    val circleTimerProgressSize = 250.dp
+    val circleTimerProgressLineSize = 6.dp
+    val timerControlsButtonSize = 60.dp
+    val buttonShapeSize = 12.dp
+    val googleSignInButtonSize = 55.dp
 
     val extraBigPadding = 40.dp
     val bigPadding = 25.dp
@@ -22,6 +27,7 @@ object Dimens {
 
     val extraBigIconSize = 30.dp
     val bigIconSize = 36.dp
+    val largeMediumIconSize = 25.dp
     val mediumIconSize = 22.dp
     val smallMediumIconSize = 16.dp
     val smallIconSize  = 14.dp

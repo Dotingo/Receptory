@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.devtoolsKsp)
     alias(libs.plugins.daggerHilt)
+    alias(libs.plugins.gms)
 }
 
 android {
@@ -51,14 +52,17 @@ android {
 }
 
 dependencies {
+    ksp(libs.androidx.hilt.compiler)
+    ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
 
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-
-    implementation(libs.androidx.hilt.lifecycle.viewmodel)
-    ksp(libs.androidx.hilt.compiler)
 
     implementation (libs.zxcvbn)
 

@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-11-18T12:18:03.189973800Z">
+        <DropdownSelection timestamp="2024-11-19T12:17:41.574750600Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\m9132\.android\avd\Copy_of_redmi_9c_nfc_API_30.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\m9132\.android\avd\Pixel_8_Pro_API_33.avd" />
             </handle>
           </Target>
         </DropdownSelection>

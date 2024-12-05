@@ -270,21 +270,20 @@ fun TimerCard(
     val isTimerFinished by timerViewModel.isTimerFinished.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    var mediaPlayer = remember {
-        MediaPlayer.create(context, R.raw.timer_alarm).apply {
-            isLooping = true
+
+    LaunchedEffect(isTimerFinished) {
+        if (isTimerFinished) {
+            timerViewModel.playAlarmSound()
+        } else {
+            timerViewModel.stopAlarmSound()
         }
     }
 
     if (isTimerFinished) {
-        mediaPlayer.start()
         @Suppress("KotlinConstantConditions")
         LaunchedEffect(isTimerFinished) {
             repeatVibration(context, isTimerFinished)
         }
-    } else {
-        mediaPlayer.stop()
-        mediaPlayer.prepare()
     }
 
     LaunchedEffect(Unit) {
@@ -311,8 +310,7 @@ fun TimerCard(
                 backgroundColor = MaterialTheme.colorScheme.secondary,
                 iconColor = MaterialTheme.colorScheme.onSecondary
             ) {
-                mediaPlayer?.release()
-                mediaPlayer = null
+                timerViewModel.stopAlarmSound()
                 timerViewModel.setShowTimer(false)
             }
             Box(

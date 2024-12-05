@@ -103,11 +103,11 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
-//        EmptyMenuScreen(
-        //        onAddRecipeClicked = {},
-        //        innerPadding = innerPadding
-        //        )
-        RecipeContent(innerPadding, navigateToRecipeScreen)
+        EmptyMenuScreen(
+                onAddRecipeClick = {},
+                innerPadding = innerPadding
+                )
+//        RecipeContent(innerPadding, navigateToRecipeScreen)
     }
 }
 
@@ -133,7 +133,6 @@ fun RecipeContent(innerPadding: PaddingValues, navigateToRecipeScreen: () -> Uni
             items(10) {
                 RecipeCard(
                     title = "рецепт печени",
-                    image = RecipePlaceholder,
                     kcal = "890",
                     category = "Завтрак",
                     isFavorite = false,

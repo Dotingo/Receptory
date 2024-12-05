@@ -1,5 +1,6 @@
 package dev.dotingo.receptory.presentation.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.nulabinc.zxcvbn.Zxcvbn
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.AuthHeader
@@ -47,7 +51,8 @@ fun RegistrationScreen(
     navigateToLoginScreen: () -> Unit,
     navigateToMainScreen: () -> Unit
 ) {
-    var username by rememberSaveable { mutableStateOf("") }
+    val auth = Firebase.auth
+    Log.d("MyLog", "User email: ${auth.currentUser?.email}")
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisibility by rememberSaveable { mutableStateOf(false) }
@@ -56,8 +61,10 @@ fun RegistrationScreen(
     val zxcvbn = Zxcvbn()
     val passwordStrength = zxcvbn.measure(password)
     fun validatePasswords() {
-        passwordError = password.length < 8 || !password.isPasswordValid() || passwordStrength.score < 3
+        passwordError =
+            password.length < 8 || !password.isPasswordValid() || passwordStrength.score < 3
     }
+
     fun getPasswordSupportingText(): String? {
         return when {
             password.isEmpty() -> null
@@ -82,17 +89,6 @@ fun RegistrationScreen(
             stringResource(R.string.create_first_account)
         )
         Spacer(modifier = Modifier.height(bigPadding))
-        ReceptoryInputField(
-            value = username,
-            onValueChange = { username = it },
-            label = stringResource(R.string.tf_name),
-            icon = UserIcon,
-            keyboardOptions = KeyboardOptions(
-                capitalization =  KeyboardCapitalization.Sentences,
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next
-            )
-        )
         Spacer(modifier = Modifier.height(bigPadding))
         ReceptoryInputField(
             value = email,
@@ -124,7 +120,9 @@ fun RegistrationScreen(
         ) {
             validatePasswords()
             if (!passwordError) {
-
+                signUp(auth, email, password) {
+                    navigateToMainScreen()
+                }
             }
         }
 
@@ -159,4 +157,16 @@ private fun RegistrationScreenPreview() {
     ReceptoryTheme {
         RegistrationScreen(navigateToMainScreen = {}, navigateToLoginScreen = {})
     }
+}
+
+private fun signUp(auth: FirebaseAuth, email: String, password: String, onSuccessful: () -> Unit) {
+    auth.createUserWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("MyLog", "Sing Up successful")
+                onSuccessful()
+            } else {
+                Log.d("MyLog", "Sing Up failure")
+            }
+        }
 }

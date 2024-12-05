@@ -31,3 +31,6 @@ object ShoppingListMenuScreen
 
 @Serializable
 object ShoppingListScreen
+
+@Serializable
+object SettingsScreen

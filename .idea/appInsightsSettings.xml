@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="dev.dotingo.receptory" />
+                  <option name="mobileSdkAppId" value="1:464280810235:android:ee476aabc58dbe5540b65e" />
+                  <option name="projectId" value="receptory-61a15" />
+                  <option name="projectNumber" value="464280810235" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

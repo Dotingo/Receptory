@@ -1,16 +1,22 @@
 package dev.dotingo.receptory.presentation.screens.timer_screen
 
+import android.app.Application
+import android.media.MediaPlayer
 import android.os.CountDownTimer
+import androidx.compose.runtime.remember
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.dotingo.receptory.R
 import dev.dotingo.receptory.utils.TimeFormatExt.timeFormat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 
-class TimerViewModel : ViewModel() {
+class TimerViewModel @Inject constructor(application: Application) : AndroidViewModel(application) {
     private var _countDownTimer: CountDownTimer? = null
     private val _timeLeft = MutableStateFlow(0L)
 
@@ -41,6 +47,33 @@ class TimerViewModel : ViewModel() {
         val minute = TimeUnit.MINUTES.toMillis(_userInputMinute.value)
         val second = TimeUnit.SECONDS.toMillis(_userInputSecond.value)
         return hour + minute + second
+    }
+
+    var mediaPlayer: MediaPlayer? =
+        MediaPlayer.create(application.applicationContext, R.raw.timer_alarm).apply {
+            isLooping = true
+        }
+
+    fun playAlarmSound() {
+        if (mediaPlayer?.isPlaying == false) {
+            mediaPlayer?.start()
+        }
+    }
+
+    fun stopAlarmSound() {
+        if (_showTimer.value) {
+            mediaPlayer?.stop()
+            mediaPlayer?.prepare()
+        } else {
+            mediaPlayer?.release()
+            mediaPlayer = null
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 
     fun startCountDownTimer() = viewModelScope.launch {

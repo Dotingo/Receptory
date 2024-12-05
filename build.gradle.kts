@@ -5,4 +5,5 @@ plugins {
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.devtoolsKsp) apply false
     alias(libs.plugins.daggerHilt) apply false
+    alias(libs.plugins.gms) apply false
 }

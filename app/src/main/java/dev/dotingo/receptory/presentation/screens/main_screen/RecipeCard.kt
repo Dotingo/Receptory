@@ -34,6 +34,7 @@ import dev.dotingo.receptory.ui.theme.Dimens.extraSmallIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.ui.icons.KcalIcon
+import dev.dotingo.receptory.ui.icons.RecipePlaceholder
 import dev.dotingo.receptory.ui.icons.StarIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteBoldIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteOutlinedIcon
@@ -43,7 +44,7 @@ import dev.dotingo.receptory.ui.theme.starColor
 @Composable
 fun RecipeCard(
     title: String,
-    image: ImageVector,
+    image: ImageVector = RecipePlaceholder,
     kcal: String,
     category: String,
     isFavorite: Boolean,

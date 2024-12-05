@@ -1,5 +1,6 @@
 package dev.dotingo.receptory.presentation.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.AuthHeader
 import dev.dotingo.receptory.presentation.components.ClickableText
@@ -37,6 +41,7 @@ import dev.dotingo.receptory.ui.icons.EmailIcon
 import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.ReceptoryTheme
+import kotlin.math.sign
 
 @Composable
 fun LoginScreen(
@@ -44,6 +49,7 @@ fun LoginScreen(
     navigateToRegistrationScreen: () -> Unit,
     navigateToMainScreen: () -> Unit
 ) {
+    val auth = Firebase.auth
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisibility by rememberSaveable { mutableStateOf(false) }
@@ -85,7 +91,9 @@ fun LoginScreen(
         ReceptoryMainButton(
             text = stringResource(R.string.login_bt)
         ) {
-
+            signIn(auth, email, password){
+                navigateToMainScreen()
+            }
         }
         Spacer(modifier = Modifier.height(bigPadding))
         ClickableText(
@@ -105,6 +113,18 @@ fun LoginScreen(
             navigateToRegistrationScreen()
         }
     }
+}
+
+private fun signIn(auth: FirebaseAuth, email: String, password: String, onSuccessful: () -> Unit) {
+    auth.signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.d("MyLog", "Sing In successful")
+                onSuccessful()
+            } else {
+                Log.d("MyLog", "Sing In failure")
+            }
+        }
 }
 
 @Preview

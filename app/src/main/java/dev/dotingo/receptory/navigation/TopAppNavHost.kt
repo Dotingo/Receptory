@@ -7,16 +7,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import dev.dotingo.receptory.presentation.screens.EditRecipeScreen
-import dev.dotingo.receptory.presentation.screens.LoginScreen
-import dev.dotingo.receptory.presentation.screens.main_screen.MainScreen
 import dev.dotingo.receptory.presentation.screens.OnboardingScreen
 import dev.dotingo.receptory.presentation.screens.RecipeScreen
-import dev.dotingo.receptory.presentation.screens.RegistrationScreen
-import dev.dotingo.receptory.presentation.screens.timer_screen.TimerScreen
+import dev.dotingo.receptory.presentation.screens.SettingsScreen
 import dev.dotingo.receptory.presentation.screens.WelcomeScreen
+import dev.dotingo.receptory.presentation.screens.authorization.LoginScreen
+import dev.dotingo.receptory.presentation.screens.authorization.RegistrationScreen
+import dev.dotingo.receptory.presentation.screens.main_screen.MainScreen
 import dev.dotingo.receptory.presentation.screens.shopping_list_screen.ShoppingListScreen
 import dev.dotingo.receptory.presentation.screens.shopping_list_screen.ShoppingListsMenuScreen
+import dev.dotingo.receptory.presentation.screens.timer_screen.TimerScreen
 
 @Composable
 fun TopAppNavHost(
@@ -24,118 +26,136 @@ fun TopAppNavHost(
     navController: NavHostController = rememberNavController()
 ) = NavHost(
     navController = navController,
-    startDestination = Welcome
+    startDestination = WelcomeScreenNav
 ) {
-    composable<Welcome> {
+    composable<WelcomeScreenNav> {
         WelcomeScreen(navigateToOnboardingScreen = {
-            navController.navigate(Onboarding) {
+            navController.navigate(OnboardingScreenNav) {
                 launchSingleTop = true
             }
         })
     }
 
-    composable<Onboarding> {
+    composable<OnboardingScreenNav> {
         OnboardingScreen(navigateToRegistrationScreen = {
-            navController.navigate(Registration) {
+            navController.navigate(RegistrationScreenNav) {
                 launchSingleTop = true
             }
         })
     }
 
-    composable<Registration> {
+    composable<RegistrationScreenNav> {
         RegistrationScreen(
             navigateToLoginScreen = {
-                navController.navigate(Login) {
+                navController.navigate(LoginScreenNav) {
                     launchSingleTop = true
                 }
             },
-            navigateToMainScreen = {
-                navController.navigate(MainScreen) {
+            navigateToMainScreen = { mainScreen ->
+                navController.navigate(mainScreen) {
                     launchSingleTop = true
                 }
             }
         )
     }
 
-    composable<Login> {
+    composable<LoginScreenNav> {
         LoginScreen(
             navigateToRegistrationScreen = {
                 navigateBack(navController)
             },
-            navigateToMainScreen = {
-                navController.navigate(MainScreen) {
+            navigateToMainScreen = { mainScreen ->
+                navController.navigate(mainScreen) {
                     launchSingleTop = true
                 }
             }
         )
     }
 
-    composable<MainScreen> {
+    composable<MainScreenNav> { navEntry ->
+        val mainScreen = navEntry.toRoute<MainScreenNav>()
         MainScreen(
-            navigateToRecipeScreen = {
-                navController.navigate(RecipeScreen) {
+            mainScreenNav = mainScreen,
+            navigateToRecipeScreen = { key ->
+                navController.navigate(RecipeScreenNav(key)) {
                     launchSingleTop = true
                 }
             },
-            navigateToAddRecipeScreen = {
-                navController.navigate(EditRecipeScreen) {
+            navigateToEditRecipeScreen = {
+                navController.navigate(EditRecipeScreenNav) {
                     launchSingleTop = true
                 }
             },
             navigateToShoppingListMenuScreen = {
-                navController.navigate(ShoppingListMenuScreen) {
+                navController.navigate(ShoppingListMenuScreenNav) {
                     launchSingleTop = true
                 }
             },
             navigateToTimerScreen = {
-                navController.navigate(TimerScreen) {
+                navController.navigate(TimerScreenNav) {
+                    launchSingleTop = true
+                }
+            },
+            navigateToSettingsScreen = {
+                navController.navigate(SettingsScreenNav) {
                     launchSingleTop = true
                 }
             }
         )
     }
 
-    composable<RecipeScreen> {
+    composable<RecipeScreenNav> { navEntry ->
         RecipeScreen(
+            key = navEntry.toRoute<RecipeScreenNav>().recipeKey,
             navigateBack = {
                 navigateBack(navController)
             },
             navigateToShoppingListMenuScreen = {
-                navController.navigate(ShoppingListMenuScreen) {
+                navController.navigate(ShoppingListMenuScreenNav) {
                     launchSingleTop = true
                 }
             }
         )
     }
 
-    composable<EditRecipeScreen> {
+    composable<EditRecipeScreenNav> {
         EditRecipeScreen {
             navigateBack(navController)
         }
     }
 
-    composable<ShoppingListMenuScreen> {
+    composable<ShoppingListMenuScreenNav> {
         ShoppingListsMenuScreen(
             navigateBack = {
                 navigateBack(navController)
             },
             navigateToShoppingList = {
-                navController.navigate(ShoppingListScreen) {
+                navController.navigate(ShoppingListScreenNav) {
                     launchSingleTop = true
                 }
             }
         )
     }
 
-    composable<ShoppingListScreen> {
+    composable<ShoppingListScreenNav> {
         ShoppingListScreen {
             navigateBack(navController)
         }
     }
 
-    composable<TimerScreen> {
+    composable<TimerScreenNav> {
         TimerScreen(navigateBack = {
             navigateBack(navController)
+        })
+    }
+
+    composable<SettingsScreenNav> {
+        SettingsScreen(navigateBack = {
+            navigateBack(navController)
+        }, navigateToRegistrationScreen = {
+            navController.navigate(RegistrationScreenNav) {
+                launchSingleTop = true
+            }
         })
     }
 }

@@ -1,6 +1,5 @@
 package dev.dotingo.receptory.presentation.screens.main_screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,31 +19,30 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import coil3.compose.AsyncImage
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
-import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
-import dev.dotingo.receptory.ui.theme.Dimens.smallMediumIconSize
-import dev.dotingo.receptory.ui.theme.Dimens.recipeCardSize
-import dev.dotingo.receptory.ui.theme.Dimens.extraSmallIconSize
-import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
-import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.ui.icons.KcalIcon
-import dev.dotingo.receptory.ui.icons.RecipePlaceholder
 import dev.dotingo.receptory.ui.icons.StarIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteBoldIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteOutlinedIcon
+import dev.dotingo.receptory.ui.theme.Dimens.extraSmallIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.recipeCardSize
+import dev.dotingo.receptory.ui.theme.Dimens.smallMediumIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.ui.theme.favoriteColor
 import dev.dotingo.receptory.ui.theme.starColor
 
 @Composable
 fun RecipeCard(
     title: String,
-    image: ImageVector = RecipePlaceholder,
+    image: String,
     kcal: String,
     category: String,
     isFavorite: Boolean,
@@ -61,8 +59,8 @@ fun RecipeCard(
             modifier = Modifier.height(recipeCardSize),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                imageVector = image,
+            AsyncImage(
+                model = image.ifEmpty { R.drawable.recipe_image_placeholder },
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -120,7 +118,9 @@ fun RecipeCard(
                         Text(
                             stringResource(R.string.kcal, kcal),
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(end = smallPadding)
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            modifier = Modifier.padding(end = smallPadding).weight(1f)
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))

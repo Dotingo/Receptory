@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import dev.dotingo.receptory.presentation.components.CircleIcon
@@ -32,7 +32,11 @@ import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
+fun SettingsScreen(
+    modifier: Modifier = Modifier,
+    navigateBack: () -> Unit,
+    navigateToRegistrationScreen: () -> Unit
+) {
 
     //delete
     val auth = Firebase.auth
@@ -78,19 +82,32 @@ fun SettingsScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             }
             HorizontalDivider(Modifier.padding(vertical = 15.dp))
             Text(
-                "Общие",
+                text = if (auth.currentUser == null) "Аккаунт" else auth.currentUser?.email
+                    ?: "Ваш аккаунт",
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 5.dp)
             )
-            Text(
-                "Аккаунт",
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                "Выйти",
-                fontWeight = FontWeight.SemiBold
-            )
+            if (auth.currentUser == null) {
+                Text(
+                    "Войти",
+                    fontWeight = FontWeight.SemiBold
+                )
+            } else {
+                Text(
+                    "Сменить пароль",
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "Выйти",
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable {
+                        signOut(auth)
+                        navigateToRegistrationScreen()
+                    }
+                )
+            }
+
             HorizontalDivider(Modifier.padding(vertical = 15.dp))
             Text(
                 "Хранилище",
@@ -122,10 +139,14 @@ fun MenuSettings(modifier: Modifier = Modifier, title: String, option: String) {
     }
 }
 
+private fun signOut(auth: FirebaseAuth) {
+    auth.signOut()
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {
     ReceptoryTheme {
-        SettingsScreen { }
+        SettingsScreen(navigateBack = {}) { }
     }
 }

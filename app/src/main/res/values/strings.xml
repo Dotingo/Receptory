@@ -48,7 +48,7 @@
     <string name="portions">"Порции"</string>
     <string name="calories">"Калории"</string>
     <string name="ingredients">Ингредиенты</string>
-    <string name="cooking_recipe">Рецепт приготовления</string>
+    <string name="cooking_steps">"Этапы готовки"</string>
     <string name="stage">Этап %1$s</string>
     <string name="add">Добавить</string>
     <string name="recipe_name">Название</string>

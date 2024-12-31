@@ -1,5 +1,6 @@
 package dev.dotingo.receptory.presentation.screens.main_screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -20,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,34 +32,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import dev.dotingo.receptory.R
+import dev.dotingo.receptory.data.Recipe
+import dev.dotingo.receptory.navigation.MainScreenNav
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.presentation.components.RecipeSearchBar
-import dev.dotingo.receptory.ui.icons.RecipePlaceholder
 import dev.dotingo.receptory.ui.icons.SettingsIcon
 import dev.dotingo.receptory.ui.icons.arrows.DownArrowIcon
 import dev.dotingo.receptory.ui.theme.Dimens.bigImageSize
+import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallMediumIconSize
-import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
-import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
-    navigateToRecipeScreen: () -> Unit,
-    navigateToAddRecipeScreen: () -> Unit,
+    mainScreenNav: MainScreenNav,
+    navigateToRecipeScreen: (String) -> Unit,
+    navigateToEditRecipeScreen: () -> Unit,
     navigateToShoppingListMenuScreen: () -> Unit,
-    navigateToTimerScreen: () -> Unit
+    navigateToTimerScreen: () -> Unit,
+    navigateToSettingsScreen: () -> Unit
 ) {
+    val recipesListState = remember { mutableStateOf(emptyList<Recipe>()) }
+
+    LaunchedEffect(Unit) {
+        val db = Firebase.firestore
+        getAllRecipes(db) { recipes ->
+            recipesListState.value = recipes
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(title = {
@@ -80,11 +96,15 @@ fun MainScreen(
             },
                 actions = {
                     IconButton(
-                        onClick = {}
+                        onClick = {
+                            navigateToSettingsScreen()
+                        }
                     ) {
-                        Icon(imageVector =  SettingsIcon,
+                        Icon(
+                            imageVector = SettingsIcon,
                             tint = MaterialTheme.colorScheme.onBackground,
-                            contentDescription = stringResource(R.string.settings))
+                            contentDescription = stringResource(R.string.settings)
+                        )
                     }
 
                 }
@@ -92,7 +112,7 @@ fun MainScreen(
         }, bottomBar = {
             ReceptoryBottomBar(
                 onAddRecipeButtonClick = {
-                    navigateToAddRecipeScreen()
+                    navigateToEditRecipeScreen()
                 },
                 onShoppingListClick = {
                     navigateToShoppingListMenuScreen()
@@ -103,18 +123,29 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
-        EmptyMenuScreen(
-                onAddRecipeClick = {},
+        if (recipesListState.value.isEmpty()) {
+            EmptyMenuScreen(
+                mainScreenNav = mainScreenNav,
+                onEditRecipeClick = navigateToEditRecipeScreen,
                 innerPadding = innerPadding
-                )
-//        RecipeContent(innerPadding, navigateToRecipeScreen)
+            )
+        } else {
+            RecipeContent(
+                innerPadding,
+                recipesListState.value,
+                navigateToRecipeScreen = navigateToRecipeScreen
+            )
+        }
     }
 }
 
 @Composable
-fun RecipeContent(innerPadding: PaddingValues, navigateToRecipeScreen: () -> Unit) {
+fun RecipeContent(
+    innerPadding: PaddingValues,
+    recipesListState: List<Recipe>,
+    navigateToRecipeScreen: (String) -> Unit
+) {
     var searchText by remember { mutableStateOf("") }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -126,19 +157,22 @@ fun RecipeContent(innerPadding: PaddingValues, navigateToRecipeScreen: () -> Uni
             onTextChange = { searchText = it },
             placeholder = stringResource(R.string.search_placeholder),
             onClearClicked = { searchText = "" },
-            onFilterClicked = {},
+            onFilterClicked = {
+            },
             onFavoriteClicked = {}
         )
         LazyColumn {
-            items(10) {
+            items(recipesListState) { recipe ->
+                Log.d("MyLog", recipe.imageUrl)
                 RecipeCard(
-                    title = "рецепт печени",
-                    kcal = "890",
-                    category = "Завтрак",
-                    isFavorite = false,
-                    rating = 5
+                    title = recipe.title,
+                    image = recipe.imageUrl,
+                    kcal = recipe.kcal,
+                    category = recipe.category,
+                    isFavorite = recipe.favorite,
+                    rating = recipe.rating
                 ) {
-                    navigateToRecipeScreen()
+                    navigateToRecipeScreen(recipe.key)
                 }
             }
             item {
@@ -150,7 +184,8 @@ fun RecipeContent(innerPadding: PaddingValues, navigateToRecipeScreen: () -> Uni
 
 @Composable
 private fun EmptyMenuScreen(
-    onAddRecipeClick: () -> Unit,
+    mainScreenNav: MainScreenNav,
+    onEditRecipeClick: () -> Unit,
     innerPadding: PaddingValues
 ) {
     Column(
@@ -164,7 +199,8 @@ private fun EmptyMenuScreen(
         val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty_screen_book))
         val progress by animateLottieCompositionAsState(composition)
         LottieAnimation(
-            modifier = Modifier.size(bigImageSize),
+            modifier = Modifier
+                .size(bigImageSize),
             composition = composition,
             progress = { progress },
         )
@@ -186,19 +222,21 @@ private fun EmptyMenuScreen(
         ReceptoryMainButton(
             text = stringResource(R.string.add_recipe)
         ) {
-            onAddRecipeClick()
+            onEditRecipeClick()
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun MainScreenPreview() {
-    ReceptoryTheme {
-        MainScreen(
-            navigateToRecipeScreen = {},
-            navigateToShoppingListMenuScreen = {},
-            navigateToAddRecipeScreen = {},
-            navigateToTimerScreen = {})
-    }
+private fun getAllRecipes(
+    db: FirebaseFirestore,
+    onRecipes: (List<Recipe>) -> Unit
+) {
+    db.collection("recipes")
+        .get()
+        .addOnSuccessListener { result ->
+            onRecipes(result.toObjects(Recipe::class.java))
+        }
+        .addOnFailureListener {
+            Log.d("MyLog", "${it.message}")
+        }
 }

@@ -3,34 +3,38 @@ package dev.dotingo.receptory.navigation
 import kotlinx.serialization.Serializable
 
 @Serializable
-object Welcome
+object WelcomeScreenNav
 
 @Serializable
-object Onboarding
+object OnboardingScreenNav
 
 @Serializable
-object Registration
+object RegistrationScreenNav
 
 @Serializable
-object Login
+object LoginScreenNav
 
 @Serializable
-object MainScreen
+data class MainScreenNav(
+    val uid: String = ""
+)
 
 @Serializable
-object RecipeScreen
+data class RecipeScreenNav(
+    val recipeKey: String = ""
+)
 
 @Serializable
-object EditRecipeScreen
+object EditRecipeScreenNav
 
 @Serializable
-object TimerScreen
+object TimerScreenNav
 
 @Serializable
-object ShoppingListMenuScreen
+object ShoppingListMenuScreenNav
 
 @Serializable
-object ShoppingListScreen
+object ShoppingListScreenNav
 
 @Serializable
-object SettingsScreen
+object SettingsScreenNav

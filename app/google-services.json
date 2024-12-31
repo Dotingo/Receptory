@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "464280810235",
-    "project_id": "receptory-61a15",
-    "storage_bucket": "receptory-61a15.firebasestorage.app"
+    "project_number": "1050974034866",
+    "project_id": "bookstore-6b96d",
+    "storage_bucket": "bookstore-6b96d.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:464280810235:android:ee476aabc58dbe5540b65e",
+        "mobilesdk_app_id": "1:1050974034866:android:b48c342eb066391a6462ab",
         "android_client_info": {
           "package_name": "dev.dotingo.receptory"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCS-TwkP_qtNRl6FDBux9fQWoTwq59PoKs"
+          "current_key": "AIzaSyABkzcTnalMF-QrNAVz7auLJE4MsKhHKgY"
         }
       ],
       "services": {

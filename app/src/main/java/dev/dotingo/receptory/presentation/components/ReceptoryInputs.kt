@@ -20,9 +20,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
+import dev.dotingo.receptory.ui.icons.PasswordIcon
 import dev.dotingo.receptory.ui.icons.eye.EyeClosedIcon
 import dev.dotingo.receptory.ui.icons.eye.EyeOpenedIcon
-import dev.dotingo.receptory.ui.icons.PasswordIcon
 
 @Composable
 fun ReceptoryInputField(
@@ -30,7 +30,9 @@ fun ReceptoryInputField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String = "",
-    icon: ImageVector? = null,
+    readOnly: Boolean = false,
+    leadingIcon: ImageVector? = null,
+    trailingIcon: ImageVector? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     TextField(
@@ -39,6 +41,7 @@ fun ReceptoryInputField(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         singleLine = true,
+        readOnly = readOnly,
         keyboardOptions = keyboardOptions,
         colors = TextFieldDefaults.colors(
             unfocusedIndicatorColor = Color.Transparent,
@@ -46,12 +49,11 @@ fun ReceptoryInputField(
             disabledIndicatorColor = Color.Transparent,
             errorIndicatorColor = Color.Transparent
         ),
-        leadingIcon = if (icon != null) {
-            {
-                Icon(imageVector = icon, contentDescription = label)
-            }
-        } else {
-            null
+        leadingIcon = leadingIcon?.let {
+            { Icon(imageVector = it, contentDescription = label) }
+        },
+        trailingIcon = trailingIcon?.let {
+            { Icon(imageVector = it, contentDescription = label) }
         },
         label = { Text(text = label) }
     )

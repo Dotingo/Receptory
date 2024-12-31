@@ -31,7 +31,7 @@ fun WelcomeScreen(modifier: Modifier = Modifier, navigateToOnboardingScreen: () 
                 painter = painterResource(id = R.drawable.welcome_background),
                 contentScale = ContentScale.FillBounds,
                 colorFilter = ColorFilter.tint(
-                    color = Color.Black.copy(alpha = 0.6f),
+                    color = Color.Black.copy(alpha = 0.4f),
                     blendMode = BlendMode.Darken
                 )
             )

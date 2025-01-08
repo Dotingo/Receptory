@@ -65,7 +65,7 @@ import dev.dotingo.receptory.R
 import dev.dotingo.receptory.data.Recipe
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryButton
-import dev.dotingo.receptory.presentation.components.ReceptoryDropdownMenu
+import dev.dotingo.receptory.presentation.components.CategoryEditScreenMenu
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryLargeInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
@@ -97,7 +97,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
     var videoLink by rememberSaveable { mutableStateOf("") }
     var isFavorite by rememberSaveable { mutableStateOf(false) }
     var rating by remember { mutableStateOf(0) }
-    val categories = arrayOf("Завтрак", "Обед", "Ужин")
+    val categories =
+        arrayOf("Завтрак", "Обед", "Ужин", "О", "Б", "Г", "Завтрак", "Обед", "Ужин", "О", "Б", "Г", "Перекус", "С яичком", "С помидорчиком", "Перекус", "С яичком", "Перекус", "С яичком", "С помидорчиком", "Перекус", "С яичком", "С помидорчиком", "еда")
     val selectedCategories = remember { mutableStateOf("") }
     val selectedIndices = remember { mutableStateListOf<Int>() }
 
@@ -257,15 +258,15 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 )
             )
             Spacer(Modifier.height(mediumPadding))
-            ReceptoryDropdownMenu(
+            CategoryEditScreenMenu(
                 modifier = Modifier.fillMaxWidth(),
                 selectedItem = selectedCategories.value,
                 items = categories,
-                label ="Категория"
+                label = "Категория"
             ) { selected ->
                 selectedIndices.clear()
                 selectedIndices.addAll(selected)
-                selectedCategories.value = selected.joinToString(",") { categories[it]}
+                selectedCategories.value = selected.joinToString(",") { categories[it] }
             }
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(

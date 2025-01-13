@@ -70,3 +70,68 @@ val EditIcon: ImageVector
 
 @Suppress("ObjectPropertyName")
 private var _EditIcon: ImageVector? = null
+
+
+val EditIconPadded: ImageVector
+    get() {
+        if (_EditIconPadded != null) {
+            return _EditIconPadded!!
+        }
+        _EditIconPadded = ImageVector.Builder(
+            name = "EditIconPadded",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color(0xFF303037))) {
+                moveTo(21f, 4.606f)
+                lineTo(19.36f, 2.996f)
+                curveTo(19.045f, 2.68f, 18.671f, 2.43f, 18.26f, 2.259f)
+                curveTo(17.848f, 2.088f, 17.406f, 2f, 16.96f, 2f)
+                curveTo(16.514f, 2f, 16.073f, 2.088f, 15.661f, 2.259f)
+                curveTo(15.249f, 2.43f, 14.875f, 2.68f, 14.56f, 2.996f)
+                lineTo(3.43f, 14.126f)
+                curveTo(2.97f, 14.59f, 2.607f, 15.142f, 2.361f, 15.748f)
+                curveTo(2.116f, 16.353f, 1.993f, 17.002f, 2f, 17.656f)
+                verticalLineTo(19.996f)
+                curveTo(2f, 20.526f, 2.211f, 21.035f, 2.586f, 21.41f)
+                curveTo(2.961f, 21.785f, 3.47f, 21.996f, 4f, 21.996f)
+                horizontalLineTo(6.35f)
+                curveTo(7.007f, 21.998f, 7.657f, 21.869f, 8.263f, 21.616f)
+                curveTo(8.869f, 21.364f, 9.419f, 20.993f, 9.88f, 20.526f)
+                lineTo(21f, 9.406f)
+                curveTo(21.321f, 9.092f, 21.574f, 8.717f, 21.746f, 8.303f)
+                curveTo(21.918f, 7.889f, 22.004f, 7.444f, 22f, 6.996f)
+                curveTo(22.002f, 6.551f, 21.914f, 6.11f, 21.742f, 5.7f)
+                curveTo(21.57f, 5.289f, 21.318f, 4.917f, 21f, 4.606f)
+                close()
+                moveTo(8.43f, 19.126f)
+                curveTo(7.867f, 19.685f, 7.104f, 19.998f, 6.31f, 19.996f)
+                horizontalLineTo(4f)
+                verticalLineTo(17.656f)
+                curveTo(4.001f, 16.86f, 4.318f, 16.098f, 4.88f, 15.536f)
+                lineTo(13.5f, 6.916f)
+                lineTo(17.09f, 10.506f)
+                lineTo(8.43f, 19.126f)
+                close()
+                moveTo(19.56f, 7.996f)
+                lineTo(18.47f, 9.096f)
+                lineTo(14.88f, 5.506f)
+                lineTo(16f, 4.406f)
+                curveTo(16.267f, 4.143f, 16.626f, 3.995f, 17f, 3.996f)
+                curveTo(17.186f, 3.994f, 17.37f, 4.03f, 17.542f, 4.1f)
+                curveTo(17.713f, 4.171f, 17.869f, 4.275f, 18f, 4.406f)
+                lineTo(19.56f, 5.996f)
+                curveTo(19.697f, 6.125f, 19.806f, 6.28f, 19.881f, 6.451f)
+                curveTo(19.957f, 6.623f, 19.997f, 6.808f, 20f, 6.996f)
+                curveTo(19.992f, 7.374f, 19.833f, 7.734f, 19.56f, 7.996f)
+                close()
+            }
+        }.build()
+
+        return _EditIconPadded!!
+    }
+
+@Suppress("ObjectPropertyName")
+private var _EditIconPadded: ImageVector? = null

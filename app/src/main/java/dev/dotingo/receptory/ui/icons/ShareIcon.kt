@@ -90,3 +90,89 @@ val ShareIcon: ImageVector
 
 @Suppress("ObjectPropertyName")
 private var _ShareIcon: ImageVector? = null
+
+
+val ShareIconPadded: ImageVector
+    get() {
+        if (_ShareIconPadded != null) {
+            return _ShareIconPadded!!
+        }
+        _ShareIconPadded = ImageVector.Builder(
+            name = "ShareIcon2",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color(0xFF303037))) {
+                moveTo(17f, 8.52f)
+                curveTo(16.01f, 8.509f, 15.052f, 8.865f, 14.31f, 9.519f)
+                lineTo(10.82f, 7.262f)
+                curveTo(10.961f, 6.854f, 11.032f, 6.425f, 11.03f, 5.994f)
+                curveTo(11.03f, 4.935f, 10.609f, 3.919f, 9.858f, 3.17f)
+                curveTo(9.108f, 2.421f, 8.091f, 2f, 7.03f, 2f)
+                curveTo(5.969f, 2f, 4.952f, 2.421f, 4.202f, 3.17f)
+                curveTo(3.451f, 3.919f, 3.03f, 4.935f, 3.03f, 5.994f)
+                curveTo(3.03f, 7.053f, 3.451f, 8.069f, 4.202f, 8.818f)
+                curveTo(4.952f, 9.567f, 5.969f, 9.988f, 7.03f, 9.988f)
+                curveTo(8.027f, 9.982f, 8.987f, 9.605f, 9.72f, 8.93f)
+                lineTo(13.22f, 11.196f)
+                curveTo(13.078f, 11.607f, 13.007f, 12.04f, 13.01f, 12.474f)
+                curveTo(13.006f, 12.812f, 13.049f, 13.148f, 13.14f, 13.473f)
+                lineTo(9.92f, 15.24f)
+                curveTo(9.543f, 14.848f, 9.089f, 14.536f, 8.587f, 14.325f)
+                curveTo(8.085f, 14.114f, 7.545f, 14.007f, 7f, 14.012f)
+                curveTo(5.939f, 14.012f, 4.922f, 14.433f, 4.172f, 15.182f)
+                curveTo(3.421f, 15.931f, 3f, 16.947f, 3f, 18.006f)
+                curveTo(3f, 19.065f, 3.421f, 20.081f, 4.172f, 20.83f)
+                curveTo(4.922f, 21.579f, 5.939f, 22f, 7f, 22f)
+                curveTo(8.061f, 22f, 9.078f, 21.579f, 9.828f, 20.83f)
+                curveTo(10.579f, 20.081f, 11f, 19.065f, 11f, 18.006f)
+                curveTo(11.003f, 17.669f, 10.96f, 17.333f, 10.87f, 17.007f)
+                lineTo(14.1f, 15.23f)
+                curveTo(14.472f, 15.627f, 14.92f, 15.945f, 15.419f, 16.163f)
+                curveTo(15.918f, 16.381f, 16.456f, 16.495f, 17f, 16.498f)
+                curveTo(18.061f, 16.498f, 19.078f, 16.077f, 19.828f, 15.328f)
+                curveTo(20.579f, 14.579f, 21f, 13.564f, 21f, 12.504f)
+                curveTo(20.997f, 11.447f, 20.575f, 10.433f, 19.825f, 9.687f)
+                curveTo(19.075f, 8.94f, 18.059f, 8.52f, 17f, 8.52f)
+                close()
+                moveTo(7f, 8.021f)
+                curveTo(6.47f, 8.021f, 5.961f, 7.811f, 5.586f, 7.436f)
+                curveTo(5.211f, 7.062f, 5f, 6.554f, 5f, 6.024f)
+                curveTo(5f, 5.494f, 5.211f, 4.986f, 5.586f, 4.612f)
+                curveTo(5.961f, 4.237f, 6.47f, 4.027f, 7f, 4.027f)
+                curveTo(7.53f, 4.027f, 8.039f, 4.237f, 8.414f, 4.612f)
+                curveTo(8.789f, 4.986f, 9f, 5.494f, 9f, 6.024f)
+                curveTo(9f, 6.554f, 8.789f, 7.062f, 8.414f, 7.436f)
+                curveTo(8.039f, 7.811f, 7.53f, 8.021f, 7f, 8.021f)
+                close()
+                moveTo(7f, 20.003f)
+                curveTo(6.47f, 20.003f, 5.961f, 19.793f, 5.586f, 19.418f)
+                curveTo(5.211f, 19.044f, 5f, 18.536f, 5f, 18.006f)
+                curveTo(5f, 17.476f, 5.211f, 16.968f, 5.586f, 16.594f)
+                curveTo(5.961f, 16.219f, 6.47f, 16.009f, 7f, 16.009f)
+                curveTo(7.53f, 16.009f, 8.039f, 16.219f, 8.414f, 16.594f)
+                curveTo(8.789f, 16.968f, 9f, 17.476f, 9f, 18.006f)
+                curveTo(9f, 18.536f, 8.789f, 19.044f, 8.414f, 19.418f)
+                curveTo(8.039f, 19.793f, 7.53f, 20.003f, 7f, 20.003f)
+                close()
+                moveTo(17f, 14.511f)
+                curveTo(16.47f, 14.511f, 15.961f, 14.301f, 15.586f, 13.926f)
+                curveTo(15.211f, 13.552f, 15f, 13.044f, 15f, 12.514f)
+                curveTo(15f, 11.985f, 15.211f, 11.477f, 15.586f, 11.102f)
+                curveTo(15.961f, 10.728f, 16.47f, 10.517f, 17f, 10.517f)
+                curveTo(17.53f, 10.517f, 18.039f, 10.728f, 18.414f, 11.102f)
+                curveTo(18.789f, 11.477f, 19f, 11.985f, 19f, 12.514f)
+                curveTo(19f, 13.044f, 18.789f, 13.552f, 18.414f, 13.926f)
+                curveTo(18.039f, 14.301f, 17.53f, 14.511f, 17f, 14.511f)
+                close()
+            }
+        }.build()
+
+        return _ShareIconPadded!!
+    }
+
+@Suppress("ObjectPropertyName")
+private var _ShareIconPadded: ImageVector? = null
+

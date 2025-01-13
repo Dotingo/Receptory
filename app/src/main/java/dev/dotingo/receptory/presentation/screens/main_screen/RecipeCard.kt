@@ -1,5 +1,8 @@
 package dev.dotingo.receptory.presentation.screens.main_screen
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,21 +15,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.dotingo.receptory.R
+import dev.dotingo.receptory.ui.icons.EditIconPadded
 import dev.dotingo.receptory.ui.icons.KcalIcon
+import dev.dotingo.receptory.ui.icons.ShareIconPadded
 import dev.dotingo.receptory.ui.icons.StarIcon
+import dev.dotingo.receptory.ui.icons.TrashIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteBoldIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteOutlinedIcon
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallIconSize
@@ -39,6 +54,7 @@ import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.ui.theme.favoriteColor
 import dev.dotingo.receptory.ui.theme.starColor
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecipeCard(
     title: String,
@@ -47,14 +63,59 @@ fun RecipeCard(
     category: String,
     isFavorite: Boolean,
     rating: Int,
-    onRecipeClicked: () -> Unit
+    onRecipeClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    onFavoriteClicked: () -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
+    var isExpended by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = extraSmallPadding),
-        onClick = onRecipeClicked
+            .padding(vertical = extraSmallPadding)
+            .combinedClickable(
+                onClick = { onRecipeClicked() },
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    isExpended = true
+                }
+            ),
     ) {
+        DropdownMenu(expanded = isExpended, onDismissRequest = { isExpended = false }) {
+            DropdownMenuItem(
+                text = { Text("Отправить") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = ShareIconPadded,
+                        contentDescription = "Отправить",
+                        modifier = Modifier.size(22.dp)
+                    )
+                },
+                onClick = {})
+            DropdownMenuItem(
+                text = { Text("Редактировать") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = EditIconPadded,
+                        contentDescription = "Редактировать",
+                        modifier = Modifier.size(22.dp)
+                    )
+                },
+                onClick = {})
+            DropdownMenuItem(
+                text = { Text("Удалить") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = TrashIcon,
+                        contentDescription = "Удалить",
+                        modifier = Modifier.size(22.dp)
+                    )
+                },
+                onClick = {
+                    onDeleteClicked()
+                    isExpended = false
+                })
+        }
         Row(
             modifier = Modifier.height(recipeCardSize),
             verticalAlignment = Alignment.CenterVertically
@@ -86,9 +147,12 @@ fun RecipeCard(
                         }
                     ) {
                         Icon(
-                            if (isFavorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
-                            "Нравится",
-                            tint = favoriteColor
+                            imageVector = if (isFavorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
+                            contentDescription = "Нравится",
+                            tint = favoriteColor,
+                            modifier = Modifier.clickable {
+                                onFavoriteClicked()
+                            }
                         )
                     }
                 }
@@ -120,7 +184,9 @@ fun RecipeCard(
                             style = MaterialTheme.typography.bodyMedium,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
-                            modifier = Modifier.padding(end = smallPadding).weight(1f)
+                            modifier = Modifier
+                                .padding(end = smallPadding)
+                                .weight(1f)
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))

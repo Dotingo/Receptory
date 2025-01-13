@@ -36,12 +36,12 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.data.Recipe
-import dev.dotingo.receptory.navigation.MainScreenNav
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.presentation.components.RecipeSearchBar
 import dev.dotingo.receptory.ui.icons.SettingsIcon
@@ -57,7 +57,6 @@ import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
-    mainScreenNav: MainScreenNav,
     navigateToRecipeScreen: (String) -> Unit,
     navigateToEditRecipeScreen: () -> Unit,
     navigateToShoppingListMenuScreen: () -> Unit,
@@ -65,9 +64,9 @@ fun MainScreen(
     navigateToSettingsScreen: () -> Unit
 ) {
     val recipesListState = remember { mutableStateOf(emptyList<Recipe>()) }
+    val db = Firebase.firestore
 
     LaunchedEffect(Unit) {
-        val db = Firebase.firestore
         getAllRecipes(db) { recipes ->
             recipesListState.value = recipes
         }
@@ -125,15 +124,18 @@ fun MainScreen(
     ) { innerPadding ->
         if (recipesListState.value.isEmpty()) {
             EmptyMenuScreen(
-                mainScreenNav = mainScreenNav,
-                onEditRecipeClick = navigateToEditRecipeScreen,
+                onEditRecipeClick = { navigateToEditRecipeScreen() },
                 innerPadding = innerPadding
             )
         } else {
             RecipeContent(
-                innerPadding,
-                recipesListState.value,
-                navigateToRecipeScreen = navigateToRecipeScreen
+                innerPadding = innerPadding,
+                db = db,
+                recipesListState = recipesListState.value,
+                navigateToRecipeScreen = navigateToRecipeScreen,
+                onUpdateRecipes = {
+                    recipesListState.value = it
+                }
             )
         }
     }
@@ -142,8 +144,10 @@ fun MainScreen(
 @Composable
 fun RecipeContent(
     innerPadding: PaddingValues,
+    db: FirebaseFirestore,
     recipesListState: List<Recipe>,
-    navigateToRecipeScreen: (String) -> Unit
+    navigateToRecipeScreen: (String) -> Unit,
+    onUpdateRecipes: (List<Recipe>) -> Unit // Передаём функцию обновления
 ) {
     var searchText by remember { mutableStateOf("") }
     Column(
@@ -157,23 +161,39 @@ fun RecipeContent(
             onTextChange = { searchText = it },
             placeholder = stringResource(R.string.search_placeholder),
             onClearClicked = { searchText = "" },
-            onFilterClicked = {
-            },
+            onFilterClicked = {},
             onFavoriteClicked = {}
         )
         LazyColumn {
             items(recipesListState) { recipe ->
-                Log.d("MyLog", recipe.imageUrl)
                 RecipeCard(
                     title = recipe.title,
                     image = recipe.imageUrl,
                     kcal = recipe.kcal,
                     category = recipe.category,
                     isFavorite = recipe.favorite,
-                    rating = recipe.rating
-                ) {
-                    navigateToRecipeScreen(recipe.key)
-                }
+                    rating = recipe.rating,
+                    onRecipeClicked = {
+                        navigateToRecipeScreen(recipe.key)
+                    },
+                    onDeleteClicked = {
+                        deleteRecipe(db, recipe.key) {
+                            // Обновляем состояние после удаления
+                            getAllRecipes(db) { updatedRecipes ->
+                                onUpdateRecipes(updatedRecipes)
+                            }
+                        }
+                    },
+                    onFavoriteClicked = {
+                        changeLike(
+                            db = db,
+                            key = recipe.key,
+                            isLiked = recipe.favorite,
+                            recipes = recipesListState,
+                            onUpdateRecipes = onUpdateRecipes
+                        )
+                    }
+                )
             }
             item {
                 Spacer(Modifier.height(smallPadding))
@@ -184,7 +204,6 @@ fun RecipeContent(
 
 @Composable
 private fun EmptyMenuScreen(
-    mainScreenNav: MainScreenNav,
     onEditRecipeClick: () -> Unit,
     innerPadding: PaddingValues
 ) {
@@ -227,16 +246,53 @@ private fun EmptyMenuScreen(
     }
 }
 
+
+private fun changeLike(
+    db: FirebaseFirestore,
+    key: String,
+    isLiked: Boolean,
+    recipes: List<Recipe>,
+    onUpdateRecipes: (List<Recipe>) -> Unit
+) {
+    db.collection("recipes")
+        .document(key)
+        .update("favorite", !isLiked)
+        .addOnSuccessListener {
+            val updatedRecipes = recipes.map { recipe ->
+                if (recipe.key == key) recipe.copy(favorite = !isLiked) else recipe
+            }
+            onUpdateRecipes(updatedRecipes)
+        }
+}
+
 private fun getAllRecipes(
     db: FirebaseFirestore,
     onRecipes: (List<Recipe>) -> Unit
 ) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
     db.collection("recipes")
-        .get()
+        .whereEqualTo("userId", userId).get()
         .addOnSuccessListener { result ->
             onRecipes(result.toObjects(Recipe::class.java))
         }
         .addOnFailureListener {
             Log.d("MyLog", "${it.message}")
+        }
+}
+
+private fun deleteRecipe(
+    db: FirebaseFirestore,
+    key: String,
+    onDeleted: () -> Unit // Колбэк для уведомления об успешном удалении
+) {
+    db.collection("recipes")
+        .document(key)
+        .delete()
+        .addOnSuccessListener {
+            Log.d("Firestore", "Документ успешно удалён")
+            onDeleted() // Уведомляем об успешном удалении
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Ошибка удаления документа", e)
         }
 }

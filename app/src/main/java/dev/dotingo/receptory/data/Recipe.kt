@@ -1,6 +1,7 @@
 package dev.dotingo.receptory.data
 
 data class Recipe(
+    val userId: String = "",
     val key: String = "",
     val title: String = "",
     val description: String = "",

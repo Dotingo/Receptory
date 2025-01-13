@@ -2,6 +2,7 @@ package dev.dotingo.receptory.presentation.screens
 
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -36,7 +37,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -63,9 +65,9 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.data.Recipe
+import dev.dotingo.receptory.presentation.components.CategoryEditScreenMenu
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryButton
-import dev.dotingo.receptory.presentation.components.CategoryEditScreenMenu
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryLargeInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
@@ -86,7 +88,9 @@ import dev.dotingo.receptory.ui.theme.starColor
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
+    val context = LocalContext.current
     var title by rememberSaveable { mutableStateOf("") }
+    var isTitleEmpty by remember { mutableStateOf(false) }
     var description by rememberSaveable { mutableStateOf("") }
     var cookingTime by rememberSaveable { mutableStateOf("") }
     var portions by rememberSaveable { mutableStateOf("") }
@@ -97,15 +101,11 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
     var videoLink by rememberSaveable { mutableStateOf("") }
     var isFavorite by rememberSaveable { mutableStateOf(false) }
     var rating by remember { mutableStateOf(0) }
-    val categories =
-        arrayOf("Завтрак", "Обед", "Ужин", "О", "Б", "Г", "Завтрак", "Обед", "Ужин", "О", "Б", "Г", "Перекус", "С яичком", "С помидорчиком", "Перекус", "С яичком", "Перекус", "С яичком", "С помидорчиком", "Перекус", "С яичком", "С помидорчиком", "еда")
     val selectedCategories = remember { mutableStateOf("") }
-    val selectedIndices = remember { mutableStateListOf<Int>() }
-
     var selectedImageUri by remember {
         mutableStateOf<Uri?>(null)
     }
-
+    val userId = Firebase.auth.uid
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -143,29 +143,35 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 .navigationBarsPadding(),
             text = stringResource(R.string.add)
         ) {
-            val firestore = Firebase.firestore
-            val storage = Firebase.storage
-            saveBookImage(
-                selectedImageUri,
-                firestore,
-                storage,
-                Recipe(
-                    title = title.trim(),
-                    description = description.trim(),
-                    category = selectedCategories.value,
-                    cookingSteps = cookingRecipe.trim(),
-                    favorite = isFavorite,
-                    rating = rating,
-                    cookingTime = cookingTime.trim(),
-                    portions = portions.trim(),
-                    kcal = kcal.trim(),
-                    ingredients = ingredients.trim(),
-                    websiteUrl = siteLink.trim(),
-                    videoUrl = videoLink.trim()
-                ),
-                onSaved = navigateBack,
-                onError = {}
-            )
+            if (title.isNotEmpty()) {
+                isTitleEmpty = true
+                val firestore = Firebase.firestore
+                val storage = Firebase.storage
+                saveRecipeImage(
+                    selectedImageUri,
+                    firestore,
+                    storage,
+                    Recipe(
+                        userId = userId.toString(),
+                        title = title.trim(),
+                        description = description.trim(),
+                        category = selectedCategories.value,
+                        cookingSteps = cookingRecipe.trim(),
+                        favorite = isFavorite,
+                        rating = rating,
+                        cookingTime = cookingTime.trim(),
+                        portions = portions.trim(),
+                        kcal = kcal.trim(),
+                        ingredients = ingredients.trim(),
+                        websiteUrl = siteLink.trim(),
+                        videoUrl = videoLink.trim()
+                    ),
+                    onSaved = navigateBack,
+                    onError = {}
+                )
+            } else {
+                Toast.makeText(context, "Введите название рецепта", Toast.LENGTH_SHORT).show()
+            }
         }
     }
     ) { innerPadding ->
@@ -260,13 +266,11 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             Spacer(Modifier.height(mediumPadding))
             CategoryEditScreenMenu(
                 modifier = Modifier.fillMaxWidth(),
+                userId = userId.toString(),
                 selectedItem = selectedCategories.value,
-                items = categories,
                 label = "Категория"
             ) { selected ->
-                selectedIndices.clear()
-                selectedIndices.addAll(selected)
-                selectedCategories.value = selected.joinToString(",") { categories[it] }
+                selectedCategories.value = selected.joinToString(", ")
             }
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(
@@ -410,7 +414,7 @@ fun RatingBar(
     }
 }
 
-private fun saveBookImage(
+private fun saveRecipeImage(
     uri: Uri?,
     firestore: FirebaseFirestore,
     storage: FirebaseStorage,
@@ -427,7 +431,7 @@ private fun saveBookImage(
         uploadTask
             .addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { url ->
-                    saveBookToFirestore(
+                    saveRecipeToFirestore(
                         firestore = firestore,
                         url = url.toString(),
                         recipe = recipe,
@@ -440,7 +444,7 @@ private fun saveBookImage(
                 Log.d("MyLog", "${ex.stackTrace}")
             }
     } else {
-        saveBookToFirestore(
+        saveRecipeToFirestore(
             firestore = firestore,
             recipe = recipe,
             onSaved = onSaved,
@@ -450,7 +454,7 @@ private fun saveBookImage(
 
 }
 
-private fun saveBookToFirestore(
+private fun saveRecipeToFirestore(
     firestore: FirebaseFirestore,
     url: String = "",
     recipe: Recipe,
@@ -469,6 +473,7 @@ private fun saveBookToFirestore(
         .addOnSuccessListener {
             onSaved()
         }.addOnFailureListener {
+            Log.d("MyLog", it.message.toString())
             onError()
         }
 }

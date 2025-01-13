@@ -26,7 +26,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.navigation.MainScreenNav
 import dev.dotingo.receptory.presentation.components.AuthHeader
 import dev.dotingo.receptory.presentation.components.ClickableText
 import dev.dotingo.receptory.presentation.components.GoogleSignInButton
@@ -46,7 +45,7 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     viewModel: AuthorizationViewModel = hiltViewModel(),
     navigateToRegistrationScreen: () -> Unit,
-    navigateToMainScreen: (MainScreenNav) -> Unit
+    navigateToMainScreen: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -88,10 +87,7 @@ fun LoginScreen(
             text = stringResource(R.string.login_bt)
         ) {
             if (state.email.isNotEmpty() && state.password.isNotEmpty()) {
-                viewModel.signIn(onSuccessful = { uid ->
-                    navigateToMainScreen(uid)
-                }
-                )
+                viewModel.signIn(onSuccessful = navigateToMainScreen)
             }
         }
         Text(
@@ -110,7 +106,7 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.SemiBold
         ) {
-            navigateToMainScreen(MainScreenNav(""))
+            navigateToMainScreen()
         }
         Spacer(modifier = Modifier.height(bigPadding))
         OrDivider()

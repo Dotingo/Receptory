@@ -15,9 +15,7 @@ object RegistrationScreenNav
 object LoginScreenNav
 
 @Serializable
-data class MainScreenNav(
-    val uid: String = ""
-)
+object MainScreenNav
 
 @Serializable
 data class RecipeScreenNav(

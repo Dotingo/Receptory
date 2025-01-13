@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.navigation.MainScreenNav
 import dev.dotingo.receptory.presentation.components.AuthHeader
 import dev.dotingo.receptory.presentation.components.ClickableText
 import dev.dotingo.receptory.presentation.components.GoogleSignInButton
@@ -57,7 +56,7 @@ fun RegistrationScreen(
     modifier: Modifier = Modifier,
     viewModel: AuthorizationViewModel = hiltViewModel(),
     navigateToLoginScreen: () -> Unit,
-    navigateToMainScreen: (MainScreenNav) -> Unit
+    navigateToMainScreen: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val verificationDialog by viewModel.verificationDialog.collectAsStateWithLifecycle()
@@ -134,7 +133,7 @@ fun RegistrationScreen(
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.SemiBold
         ) {
-            navigateToMainScreen(MainScreenNav(""))
+            navigateToMainScreen()
         }
         Spacer(modifier = Modifier.height(bigPadding))
         OrDivider()
@@ -151,13 +150,13 @@ fun RegistrationScreen(
 @Composable
 fun VerificationDialog(
     modifier: Modifier = Modifier,
-    navigateToMainScreen: (MainScreenNav) -> Unit,
+    navigateToMainScreen: () -> Unit,
     viewModel: AuthorizationViewModel
 ) {
     val context = LocalContext.current
-    viewModel.monitorEmailVerification { uid ->
+    viewModel.monitorEmailVerification {
         Toast.makeText(context, "Email подтвержден!", Toast.LENGTH_SHORT).show()
-        navigateToMainScreen(MainScreenNav(uid))
+        navigateToMainScreen()
     }
     BasicAlertDialog(
         modifier = modifier,

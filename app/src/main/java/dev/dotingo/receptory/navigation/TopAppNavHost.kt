@@ -51,8 +51,8 @@ fun TopAppNavHost(
                     launchSingleTop = true
                 }
             },
-            navigateToMainScreen = { mainScreen ->
-                navController.navigate(mainScreen) {
+            navigateToMainScreen = {
+                navController.navigate(MainScreenNav) {
                     launchSingleTop = true
                 }
             }
@@ -64,18 +64,16 @@ fun TopAppNavHost(
             navigateToRegistrationScreen = {
                 navigateBack(navController)
             },
-            navigateToMainScreen = { mainScreen ->
-                navController.navigate(mainScreen) {
+            navigateToMainScreen = {
+                navController.navigate(MainScreenNav) {
                     launchSingleTop = true
                 }
             }
         )
     }
 
-    composable<MainScreenNav> { navEntry ->
-        val mainScreen = navEntry.toRoute<MainScreenNav>()
+    composable<MainScreenNav> {
         MainScreen(
-            mainScreenNav = mainScreen,
             navigateToRecipeScreen = { key ->
                 navController.navigate(RecipeScreenNav(key)) {
                     launchSingleTop = true

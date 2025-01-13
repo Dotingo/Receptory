@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.nulabinc.zxcvbn.Zxcvbn
-import dev.dotingo.receptory.navigation.MainScreenNav
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +39,7 @@ class AuthorizationViewModel : ViewModel() {
         )
     }
 
-    fun signIn(onSuccessful: (MainScreenNav) -> Unit) {
+    fun signIn(onSuccessful: () -> Unit) {
         val state = _uiState.value
         if (state.email.isBlank() || state.password.isBlank()) {
             return
@@ -53,7 +52,7 @@ class AuthorizationViewModel : ViewModel() {
                 if (task.isSuccessful) {
                     val user = _firebaseAuth.currentUser
                     if (user != null && user.isEmailVerified) {
-                        onSuccessful(MainScreenNav(user.uid))
+                        onSuccessful()
                     } else {
                         _uiState.value = state.copy(
                             authErrorMessage = "Почта не подтверждена. Проверьте письмо для подтверждения."

@@ -15,5 +15,6 @@ data class Recipe(
     val kcal: String = "",
     val ingredients: String = "",
     val websiteUrl: String = "",
-    val videoUrl: String = ""
+    val videoUrl: String = "",
+    val creationTime: Long = System.currentTimeMillis()
 )

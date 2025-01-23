@@ -18,12 +18,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
@@ -43,7 +45,7 @@ fun SettingsScreen(
 
     Scaffold(topBar = {
         CenterAlignedTopAppBar(
-            title = { Text("Настройки") },
+            title = { Text(stringResource(R.string.settings)) },
             navigationIcon = {
                 CircleIcon(
                     modifier = Modifier.padding(start = smallPadding),
@@ -61,20 +63,20 @@ fun SettingsScreen(
                 .padding(horizontal = commonHorizontalPadding)
         ) {
             Text(
-                "Общие",
+                stringResource(R.string.general_settings),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 5.dp)
             )
-            MenuSettings(title = "Язык приложения", option = "Русский")
+            MenuSettings(title = stringResource(R.string.app_lang_settings), option = "Русский")
             Spacer(Modifier.height(5.dp))
-            MenuSettings(title = "Тема", option = "Тёмная")
+            MenuSettings(title = stringResource(R.string.theme_settings), option = "Тёмная")
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Вибрация таймера",
+                    stringResource(R.string.timer_vibration_settings),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
@@ -82,24 +84,24 @@ fun SettingsScreen(
             }
             HorizontalDivider(Modifier.padding(vertical = 15.dp))
             Text(
-                text = if (auth.currentUser == null) "Аккаунт" else auth.currentUser?.email
-                    ?: "Ваш аккаунт",
+                text = if (auth.currentUser == null) stringResource(R.string.account_settings) else auth.currentUser?.email
+                    ?: stringResource(R.string.your_account),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 5.dp)
             )
             if (auth.currentUser == null) {
                 Text(
-                    "Войти",
+                    stringResource(R.string.login_bt),
                     fontWeight = FontWeight.SemiBold
                 )
             } else {
                 Text(
-                    "Сменить пароль",
+                    stringResource(R.string.сhange_password),
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    "Выйти",
+                    stringResource(R.string.logout),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable {
                         signOut(auth)
@@ -110,13 +112,13 @@ fun SettingsScreen(
 
             HorizontalDivider(Modifier.padding(vertical = 15.dp))
             Text(
-                "Хранилище",
+                stringResource(R.string.storage),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 5.dp)
             )
             Text(
-                "Выгрузить рецепты",
+                stringResource(R.string.export_recipes),
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -126,7 +128,6 @@ fun SettingsScreen(
 @Composable
 fun MenuSettings(modifier: Modifier = Modifier, title: String, option: String) {
     Column(modifier = modifier.clickable {
-
     }) {
         Text(
             title,

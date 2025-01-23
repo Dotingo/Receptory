@@ -1,7 +1,6 @@
 package dev.dotingo.receptory.presentation.screens.timer_screen
 
 import android.content.res.Configuration
-import android.media.MediaPlayer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -90,7 +90,7 @@ fun TimerScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Таймер") },
+                title = { Text(stringResource(R.string.timer)) },
                 navigationIcon = {
                     CircleIcon(
                         imageVector = BackArrowIcon,
@@ -131,7 +131,7 @@ fun TimerScreen(
                         .padding(horizontal = commonHorizontalPadding)
                         .padding(top = smallPadding)
                         .navigationBarsPadding(),
-                    text = "Добавить таймер",
+                    text = stringResource(R.string.add_timer),
                     enabled = timerText != "00:00:00"
                 ) {
                     timerViewModel.setShowTimer(true)

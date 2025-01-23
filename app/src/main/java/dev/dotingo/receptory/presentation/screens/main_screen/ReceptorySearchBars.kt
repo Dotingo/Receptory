@@ -1,4 +1,4 @@
-package dev.dotingo.receptory.presentation.components
+package dev.dotingo.receptory.presentation.screens.main_screen
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +18,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -33,6 +36,7 @@ import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.icons.FilterArrowIcon
 import dev.dotingo.receptory.ui.icons.SearchIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteBoldIcon
+import dev.dotingo.receptory.ui.icons.favorite.FavoriteOutlinedIcon
 import dev.dotingo.receptory.ui.theme.favoriteColor
 
 
@@ -43,11 +47,13 @@ fun RecipeSearchBar(
     placeholder: String,
     onTextChange: (String) -> Unit,
     onClearClicked: () -> Unit,
-    onFilterClicked: () -> Unit,
-    onFavoriteClicked: () -> Unit
+    onSortFilterClicked: (Boolean) -> Unit,
+    onFavoriteFilterClicked: (Boolean) -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    var isFavoriteOn by remember { mutableStateOf(false) }
+    var isSortFilterOpen by remember { mutableStateOf(false) }
 
     Column(modifier.padding(horizontal = smallPadding)) {
         Row(
@@ -108,15 +114,17 @@ fun RecipeSearchBar(
                 singleLine = true
             )
             IconButton(onClick = {
-                onFilterClicked()
+                isSortFilterOpen = !isSortFilterOpen
+                onSortFilterClicked(isSortFilterOpen)
             }) {
                 Icon(FilterArrowIcon, "Фильтр сортировки")
             }
             IconButton(onClick = {
-                onFavoriteClicked()
+                isFavoriteOn = !isFavoriteOn
+                onFavoriteFilterClicked(isFavoriteOn)
             }) {
                 Icon(
-                    FavoriteBoldIcon,
+                     if (isFavoriteOn) FavoriteBoldIcon else FavoriteOutlinedIcon,
                     "Фильтр фаворитов",
                     tint = favoriteColor
                 )

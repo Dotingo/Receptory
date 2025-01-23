@@ -23,11 +23,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
+import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.ui.icons.MoreVertIcon
@@ -36,7 +37,6 @@ import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
-import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +74,7 @@ fun ShoppingListScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) 
         )
     }) { innerPadding ->
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = commonHorizontalPadding)
@@ -83,7 +83,7 @@ fun ShoppingListScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) 
                 ReceptoryInputField(
                     value = newElement,
                     onValueChange = { newElement = it },
-                    label = "Добавить",
+                    label = stringResource(R.string.add),
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = tinyPadding)
@@ -130,15 +130,5 @@ fun ShoppingListElement() {
             modifier = Modifier.padding(vertical = 15.dp)
         )
         HorizontalDivider()
-    }
-}
-
-@Preview
-@Composable
-private fun ShoppingListScreenPreview() {
-    ReceptoryTheme {
-        ShoppingListScreen() {
-
-        }
     }
 }

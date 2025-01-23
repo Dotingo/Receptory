@@ -1,14 +1,17 @@
 package dev.dotingo.receptory.presentation.screens.main_screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -39,6 +42,7 @@ import coil3.compose.AsyncImage
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.ui.icons.EditIconPadded
 import dev.dotingo.receptory.ui.icons.KcalIcon
+import dev.dotingo.receptory.ui.icons.PlaceholderIcon
 import dev.dotingo.receptory.ui.icons.ShareIconPadded
 import dev.dotingo.receptory.ui.icons.StarIcon
 import dev.dotingo.receptory.ui.icons.TrashIcon
@@ -57,6 +61,7 @@ import dev.dotingo.receptory.ui.theme.starColor
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecipeCard(
+    modifier: Modifier = Modifier,
     title: String,
     image: String,
     kcal: String,
@@ -70,7 +75,7 @@ fun RecipeCard(
     val haptics = LocalHapticFeedback.current
     var isExpended by remember { mutableStateOf(false) }
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = extraSmallPadding)
             .combinedClickable(
@@ -120,13 +125,29 @@ fun RecipeCard(
             modifier = Modifier.height(recipeCardSize),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = image.ifEmpty { R.drawable.recipe_image_placeholder },
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .aspectRatio(1f)
-            )
+            if (image.isNotEmpty()) {
+                AsyncImage(
+                    model = image,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Icon(
+                        PlaceholderIcon,
+                        "",
+                        modifier = Modifier.align(Alignment.Center).fillMaxSize(),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+
             Column(
                 modifier = Modifier
                     .padding(smallPadding)

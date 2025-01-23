@@ -17,9 +17,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
+import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.ui.icons.PlusIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
@@ -35,7 +37,7 @@ fun ShoppingListsMenuScreen(
     navigateToShoppingList: () -> Unit
 ) {
     Scaffold(topBar = {
-        CenterAlignedTopAppBar(title = { Text("Список покупок") },
+        CenterAlignedTopAppBar(title = { Text(stringResource(R.string.shopping_list_title)) },
             navigationIcon = {
                 CircleIcon(
                     modifier = Modifier.padding(start = smallPadding),
@@ -54,7 +56,7 @@ fun ShoppingListsMenuScreen(
         }
     ) {
         LazyColumn(
-            contentPadding = it, modifier = Modifier.fillMaxSize()
+            contentPadding = it, modifier = modifier.fillMaxSize()
         ) {
             items(50) {
                 Card(

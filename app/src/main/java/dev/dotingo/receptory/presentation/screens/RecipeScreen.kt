@@ -62,6 +62,7 @@ import dev.dotingo.receptory.R
 import dev.dotingo.receptory.data.Recipe
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.ui.icons.EditIcon
+import dev.dotingo.receptory.ui.icons.PlaceholderIcon
 import dev.dotingo.receptory.ui.icons.ShareIcon
 import dev.dotingo.receptory.ui.icons.ShoppingListIcon
 import dev.dotingo.receptory.ui.icons.StarIcon
@@ -145,7 +146,7 @@ fun RecipeScreen(
             })
     }) {
         LazyColumn(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .navigationBarsPadding(),
             state = listState,
@@ -210,14 +211,31 @@ private fun RecipeHeader(imageUrl: String, title: String, category: String, rati
             .aspectRatio(1f)
             .height(bigImageSize)
     ) {
-        AsyncImage(
-            imageUrl.ifEmpty { R.drawable.recipe_image_placeholder },
-            "",
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            contentScale = ContentScale.Crop,
-        )
+        if (imageUrl.isNotEmpty()){
+            AsyncImage(
+                imageUrl,
+                "",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        else{
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Icon(
+                    PlaceholderIcon,
+                    "",
+                    modifier = Modifier.align(Alignment.Center).fillMaxSize(),
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -226,7 +244,7 @@ private fun RecipeHeader(imageUrl: String, title: String, category: String, rati
                     Brush.verticalGradient(
                         colors = listOf(Color.Transparent, Color.Black),
                         startY = 0f,
-                        endY = 1200f
+                        endY = 1500f
                     )
                 )
         )

@@ -106,6 +106,7 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.SemiBold
         ) {
+            viewModel.signOut()
             navigateToMainScreen()
         }
         Spacer(modifier = Modifier.height(bigPadding))

@@ -25,19 +25,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
-import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
-import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
-import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.icons.CookingIcons
 import dev.dotingo.receptory.ui.icons.FolderIcon
 import dev.dotingo.receptory.ui.icons.PlusIcon
 import dev.dotingo.receptory.ui.icons.SearchIcon
 import dev.dotingo.receptory.ui.icons.ShoppingListIcon
-import dev.dotingo.receptory.ui.theme.ReceptoryTheme
+import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
+import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
+import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,13 +134,5 @@ fun InfoTextWithLabel(
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
-    }
-}
-
-@Preview
-@Composable
-private fun OnboardingScreenPreview() {
-    ReceptoryTheme {
-        OnboardingScreen { }
     }
 }

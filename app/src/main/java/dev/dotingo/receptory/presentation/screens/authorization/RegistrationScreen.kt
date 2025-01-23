@@ -133,6 +133,7 @@ fun RegistrationScreen(
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.SemiBold
         ) {
+            viewModel.signOut()
             navigateToMainScreen()
         }
         Spacer(modifier = Modifier.height(bigPadding))
@@ -155,7 +156,7 @@ fun VerificationDialog(
 ) {
     val context = LocalContext.current
     viewModel.monitorEmailVerification {
-        Toast.makeText(context, "Email подтвержден!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.email_confirmed), Toast.LENGTH_SHORT).show()
         navigateToMainScreen()
     }
     BasicAlertDialog(
@@ -171,7 +172,7 @@ fun VerificationDialog(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Ожидание подтверждения email",
+                    text = stringResource(R.string.waiting_email_confirmation),
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -180,7 +181,7 @@ fun VerificationDialog(
                     onClick = { viewModel.closeVerificationDialog() },
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Отмена")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         }

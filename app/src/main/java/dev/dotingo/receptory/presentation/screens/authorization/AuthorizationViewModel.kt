@@ -2,22 +2,28 @@ package dev.dotingo.receptory.presentation.screens.authorization
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.nulabinc.zxcvbn.Zxcvbn
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.dotingo.receptory.data.local.datastore.DataStoreManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AuthorizationViewModel : ViewModel() {
-    private val _firebaseAuth = Firebase.auth
+@HiltViewModel
+class AuthorizationViewModel @Inject constructor(
+    private val dataStoreManager: DataStoreManager,
+    private val auth: FirebaseAuth
+) : ViewModel() {
+
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
     private val _verificationDialog = MutableStateFlow(false)
     val verificationDialog: StateFlow<Boolean> = _verificationDialog
-    fun closeVerificationDialog(){
+    fun closeVerificationDialog() {
         _verificationDialog.value = false
     }
 
@@ -39,6 +45,10 @@ class AuthorizationViewModel : ViewModel() {
         )
     }
 
+    fun signOut() {
+        auth.signOut()
+    }
+
     fun signIn(onSuccessful: () -> Unit) {
         val state = _uiState.value
         if (state.email.isBlank() || state.password.isBlank()) {
@@ -46,12 +56,15 @@ class AuthorizationViewModel : ViewModel() {
         }
 
         _uiState.value = state.copy(isLoading = true)
-        _firebaseAuth.signInWithEmailAndPassword(state.email, state.password)
+        auth.signInWithEmailAndPassword(state.email, state.password)
             .addOnCompleteListener { task ->
                 _uiState.value = state.copy(isLoading = false)
                 if (task.isSuccessful) {
-                    val user = _firebaseAuth.currentUser
+                    val user = auth.currentUser
                     if (user != null && user.isEmailVerified) {
+                        viewModelScope.launch {
+                            dataStoreManager.setUserLoggedIn(true)
+                        }
                         onSuccessful()
                     } else {
                         _uiState.value = state.copy(
@@ -74,11 +87,11 @@ class AuthorizationViewModel : ViewModel() {
         }
 
         _uiState.value = state.copy(isLoading = true)
-        _firebaseAuth.createUserWithEmailAndPassword(state.email, state.password)
+        auth.createUserWithEmailAndPassword(state.email, state.password)
             .addOnCompleteListener { task ->
                 _uiState.value = state.copy(isLoading = false)
                 if (task.isSuccessful && state.passwordError.isEmpty()) {
-                    _firebaseAuth.currentUser!!.sendEmailVerification()
+                    auth.currentUser!!.sendEmailVerification()
                     _verificationDialog.value = true
                 }
             }.addOnFailureListener {
@@ -89,15 +102,18 @@ class AuthorizationViewModel : ViewModel() {
             }
     }
 
-    fun monitorEmailVerification(onEmailVerified: (String) -> Unit) {
+    fun monitorEmailVerification(onEmailVerified: () -> Unit) {
         viewModelScope.launch {
             var isVerified = false
             while (!isVerified) {
-                val user = _firebaseAuth.currentUser
+                val user = auth.currentUser
                 user?.reload()?.addOnCompleteListener { task ->
                     if (task.isSuccessful && user.isEmailVerified) {
                         isVerified = true
-                        onEmailVerified(user.uid)
+                        viewModelScope.launch {
+                            dataStoreManager.setUserLoggedIn(true)
+                        }
+                        onEmailVerified()
                     }
                 }
                 delay(5000)
@@ -116,13 +132,14 @@ class AuthorizationViewModel : ViewModel() {
             else -> ""
         }
     }
+
+    data class AuthUiState(
+        val email: String = "",
+        val password: String = "",
+        val passwordVisibility: Boolean = false,
+        val passwordError: String = "",
+        val authErrorMessage: String = "",
+        val isLoading: Boolean = false
+    )
 }
 
-data class AuthUiState(
-    val email: String = "",
-    val password: String = "",
-    val passwordVisibility: Boolean = false,
-    val passwordError: String = "",
-    val authErrorMessage: String = "",
-    val isLoading: Boolean = false
-)

@@ -16,9 +16,9 @@
     <string name="to_receptory">в Рецептурий</string>
     <string name="start_now_button">Начать сейчас</string>
     <string name="password">Пароль</string>
-    <string name="google">Через гугл</string>
+    <string name="google">Через Google</string>
     <string name="tf_name">Имя</string>
-    <string name="tf_email">Email</string>
+    <string name="tf_email" translatable="false">Email</string>
     <string name="registration_bt">Зарегистрироваться</string>
     <string name="continue_without_reg">Продолжить без регистрации</string>
     <string name="registration_title">Регистрация</string>
@@ -53,8 +53,8 @@
     <string name="add">Добавить</string>
     <string name="recipe_name">Название</string>
     <string name="add_image">Добавить изображение</string>
-    <string name="clear_image">Убрать изображение</string>
-    <string name="repeat_password">Повторите пароль</string>
+    <string name="remove_image">Убрать изображение</string>
+    <string name="confirm_password">Повторите пароль</string>
     <string name="add_interner_recipe">Добавить рецепт из интернета</string>
     <string name="help">"Подсказка: "</string>
     <string name="ingredients_help">пишите разные ингридиенты с новых строк</string>
@@ -63,4 +63,28 @@
     <string name="add_timer">Добавить таймер</string>
     <string name="cancel">Отмена</string>
     <string name="ok">ОК</string>
+    <string name="sorting">Сортировка</string>
+    <string name="by_name_sort">По названию</string>
+    <string name="by_rating_sort">По рейтингу</string>
+    <string name="by_calories_sort">По калориям</string>
+    <string name="by_changes_sort">По изменениям</string>
+    <string name="enter_recipe_name">Введите название рецепта</string>
+    <string name="category">Категория</string>
+    <string name="email_confirmed">Email подтвержден!</string>
+    <string name="waiting_email_confirmation">Ожидание подтверждения email</string>
+    <string name="shopping_list_title">Список покупок</string>
+    <string name="general_settings">Общие</string>
+    <string name="app_lang_settings">Язык приложения</string>
+    <string name="theme_settings">Тема</string>
+    <string name="timer_vibration_settings">Вибрация таймера</string>
+    <string name="account_settings">Аккаунт</string>
+    <string name="your_account">Ваш аккаунт</string>
+    <string name="сhange_password">Сменить пароль</string>
+    <string name="logout">Выйти</string>
+    <string name="storage">Хранилище</string>
+    <string name="export_recipes">Выгрузить рецепты</string>
+    <string name="recipe_image">Изображение рецепта</string>
+    <string name="like">Нравится</string>
+    <string name="go_back">Назад</string>
+    <string name="rating">Рейтинг %1$s</string>
 </resources>

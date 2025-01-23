@@ -1,7 +1,5 @@
-package dev.dotingo.receptory.presentation.screens
+package dev.dotingo.receptory.presentation.screens.edit_screen
 
-import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,9 +35,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,15 +52,10 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.ktx.storage
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.data.Recipe
 import dev.dotingo.receptory.presentation.components.CategoryEditScreenMenu
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryButton
@@ -87,29 +78,20 @@ import dev.dotingo.receptory.ui.theme.starColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
+fun EditRecipeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: EditRecipeViewModel = hiltViewModel(),
+    navigateBack: () -> Unit
+) {
     val context = LocalContext.current
-    var title by rememberSaveable { mutableStateOf("") }
-    var isTitleEmpty by remember { mutableStateOf(false) }
-    var description by rememberSaveable { mutableStateOf("") }
-    var cookingTime by rememberSaveable { mutableStateOf("") }
-    var portions by rememberSaveable { mutableStateOf("") }
-    var kcal by rememberSaveable { mutableStateOf("") }
-    var ingredients by rememberSaveable { mutableStateOf("") }
-    var cookingRecipe by rememberSaveable { mutableStateOf("") }
-    var siteLink by rememberSaveable { mutableStateOf("") }
-    var videoLink by rememberSaveable { mutableStateOf("") }
-    var isFavorite by rememberSaveable { mutableStateOf(false) }
-    var rating by remember { mutableStateOf(0) }
-    val selectedCategories = remember { mutableStateOf("") }
-    var selectedImageUri by remember {
-        mutableStateOf<Uri?>(null)
-    }
-    val userId = Firebase.auth.uid
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isButtonEnabled by viewModel.isButtonEnabled.collectAsStateWithLifecycle()
+    val userId by viewModel.uid.collectAsStateWithLifecycle()
+
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        selectedImageUri = uri
+        viewModel.onImageSelected(uri)
     }
 
     Scaffold(topBar = {
@@ -119,7 +101,7 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 CircleIcon(
                     modifier = Modifier.padding(start = smallPadding),
                     imageVector = BackArrowIcon,
-                    contentDescription = "Назад"
+                    contentDescription = stringResource(R.string.go_back)
                 ) {
                     navigateBack()
                 }
@@ -141,42 +123,22 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 .padding(horizontal = commonHorizontalPadding)
                 .padding(top = smallPadding)
                 .navigationBarsPadding(),
-            text = stringResource(R.string.add)
+            text = stringResource(R.string.add),
+            enabled = isButtonEnabled
         ) {
-            if (title.isNotEmpty()) {
-                isTitleEmpty = true
-                val firestore = Firebase.firestore
-                val storage = Firebase.storage
-                saveRecipeImage(
-                    selectedImageUri,
-                    firestore,
-                    storage,
-                    Recipe(
-                        userId = userId.toString(),
-                        title = title.trim(),
-                        description = description.trim(),
-                        category = selectedCategories.value,
-                        cookingSteps = cookingRecipe.trim(),
-                        favorite = isFavorite,
-                        rating = rating,
-                        cookingTime = cookingTime.trim(),
-                        portions = portions.trim(),
-                        kcal = kcal.trim(),
-                        ingredients = ingredients.trim(),
-                        websiteUrl = siteLink.trim(),
-                        videoUrl = videoLink.trim()
-                    ),
-                    onSaved = navigateBack,
-                    onError = {}
-                )
+            if (uiState.title.isNotEmpty()) {
+                viewModel.saveRecipe( onSaved = navigateBack, onError = {})
             } else {
-                Toast.makeText(context, "Введите название рецепта", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.enter_recipe_name), Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
     ) { innerPadding ->
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .padding(innerPadding)
                 .fillMaxSize()
                 .padding(horizontal = commonHorizontalPadding)
@@ -187,8 +149,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             Row(Modifier.fillMaxWidth()) {
                 ReceptoryInputField(
                     modifier = Modifier.weight(1f),
-                    value = title,
-                    onValueChange = { title = it },
+                    value = uiState.title,
+                    onValueChange = { viewModel.onFieldChange(EditRecipeField.TITLE, it) },
                     label = stringResource(R.string.recipe_name),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -209,22 +171,22 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                             interactionSource = interactionSource,
                             indication = null
                         ) {
-                            isFavorite = !isFavorite
+                            viewModel.onFavoriteChange()
                         },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        if (isFavorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
-                        "Нравится",
+                        imageVector = if (uiState.isFavorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
+                        contentDescription = stringResource(R.string.like),
                         tint = favoriteColor
                     )
                 }
             }
             Spacer(Modifier.height(mediumPadding))
-            if (selectedImageUri != null) {
+            if (uiState.selectedImageUri != null) {
                 AsyncImage(
-                    model = selectedImageUri,
-                    contentDescription = "Изображение рецепта",
+                    model = uiState.selectedImageUri,
+                    contentDescription = stringResource(R.string.recipe_image),
                     modifier = Modifier
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(12.dp)),
@@ -238,26 +200,27 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 ) {
                     imageLauncher.launch("image/*")
                 }
-                if (selectedImageUri != null) {
-                    IconButton(onClick = { selectedImageUri = null }) {
+                if (uiState.selectedImageUri != null) {
+                    IconButton(onClick = { viewModel.onImageSelected(null) }) {
                         Icon(
-                            CloseIcon, stringResource(R.string.clear_image),
-                            modifier.padding(start = extraSmallPadding)
+                            imageVector = CloseIcon,
+                            contentDescription = stringResource(R.string.remove_image),
+                            modifier = Modifier.padding(start = extraSmallPadding)
                         )
                     }
                 }
             }
             Spacer(Modifier.height(mediumPadding))
             RatingBar(
-                rating = rating,
+                rating = uiState.rating,
                 onRatingChanged = { newRating ->
-                    rating = newRating
+                    viewModel.onRatingChange(newRating)
                 }
             )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryLargeInputField(
-                value = description,
-                onValueChange = { description = it },
+                value = uiState.description,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.DESCRIPTION, it) },
                 label = stringResource(R.string.recipe_description),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
@@ -266,16 +229,19 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             Spacer(Modifier.height(mediumPadding))
             CategoryEditScreenMenu(
                 modifier = Modifier.fillMaxWidth(),
-                userId = userId.toString(),
-                selectedItem = selectedCategories.value,
-                label = "Категория"
+                userId = userId,
+                selectedItem = uiState.selectedCategories,
+                label = stringResource(R.string.category)
             ) { selected ->
-                selectedCategories.value = selected.joinToString(", ")
+                viewModel.onFieldChange(
+                    EditRecipeField.SELECTED_CATEGORIES,
+                    selected.joinToString(", ")
+                )
             }
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(
-                value = cookingTime,
-                onValueChange = { cookingTime = it },
+                value = uiState.cookingTime,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.COOKING_TIME, it) },
                 label = stringResource(R.string.cooking_time),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
@@ -286,8 +252,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             Row {
                 ReceptoryInputField(
                     modifier = Modifier.weight(1f),
-                    value = portions,
-                    onValueChange = { portions = it },
+                    value = uiState.portions,
+                    onValueChange = { viewModel.onFieldChange(EditRecipeField.PORTIONS, it) },
                     label = stringResource(R.string.portions),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -298,8 +264,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
                 Spacer(Modifier.width(mediumPadding))
                 ReceptoryInputField(
                     modifier = Modifier.weight(1f),
-                    value = kcal,
-                    onValueChange = { kcal = it },
+                    value = uiState.kcal,
+                    onValueChange = { viewModel.onFieldChange(EditRecipeField.KCAL, it) },
                     label = stringResource(R.string.calories),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -310,8 +276,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             }
             Spacer(Modifier.height(mediumPadding))
             ReceptoryLargeInputField(
-                value = ingredients,
-                onValueChange = { ingredients = it },
+                value = uiState.ingredients,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.INGREDIENTS, it) },
                 label = stringResource(R.string.ingredients),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
@@ -329,8 +295,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryLargeInputField(
-                value = cookingRecipe,
-                onValueChange = { cookingRecipe = it },
+                value = uiState.cookingSteps,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.COOKING_STEPS, it) },
                 label = stringResource(R.string.cooking_steps),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
@@ -348,8 +314,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(
-                value = siteLink,
-                onValueChange = { siteLink = it },
+                value = uiState.siteLink,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.SITE_LINK, it) },
                 label = stringResource(R.string.site_link),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -358,8 +324,8 @@ fun EditRecipeScreen(modifier: Modifier = Modifier, navigateBack: () -> Unit) {
             )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(
-                value = videoLink,
-                onValueChange = { videoLink = it },
+                value = uiState.videoLink,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.VIDEO_LINK, it) },
                 label = stringResource(R.string.video_link),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -390,7 +356,7 @@ fun RatingBar(
             repeat(5) { index ->
                 Icon(
                     imageVector = StarIcon,
-                    contentDescription = "Рейтинг $index",
+                    contentDescription = stringResource(R.string.rating, index),
                     modifier = Modifier
                         .size(extraBigIconSize)
                         .clickable(
@@ -412,68 +378,4 @@ fun RatingBar(
             }
         }
     }
-}
-
-private fun saveRecipeImage(
-    uri: Uri?,
-    firestore: FirebaseFirestore,
-    storage: FirebaseStorage,
-    recipe: Recipe,
-    onSaved: () -> Unit,
-    onError: () -> Unit
-) {
-    val timestamp = System.currentTimeMillis()
-    val storageRef = storage.reference
-        .child("recipe_images")
-        .child("image_$timestamp.jpg")
-    if (uri != null) {
-        val uploadTask = storageRef.putFile(uri)
-        uploadTask
-            .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { url ->
-                    saveRecipeToFirestore(
-                        firestore = firestore,
-                        url = url.toString(),
-                        recipe = recipe,
-                        onSaved = onSaved,
-                        onError = onError
-                    )
-                }
-            }
-            .addOnFailureListener { ex ->
-                Log.d("MyLog", "${ex.stackTrace}")
-            }
-    } else {
-        saveRecipeToFirestore(
-            firestore = firestore,
-            recipe = recipe,
-            onSaved = onSaved,
-            onError = onError
-        )
-    }
-
-}
-
-private fun saveRecipeToFirestore(
-    firestore: FirebaseFirestore,
-    url: String = "",
-    recipe: Recipe,
-    onSaved: () -> Unit,
-    onError: () -> Unit
-) {
-    val db = firestore.collection("recipes")
-    val key = db.document().id
-    db.document(key)
-        .set(
-            recipe.copy(
-                key = key,
-                imageUrl = url
-            )
-        )
-        .addOnSuccessListener {
-            onSaved()
-        }.addOnFailureListener {
-            Log.d("MyLog", it.message.toString())
-            onError()
-        }
 }

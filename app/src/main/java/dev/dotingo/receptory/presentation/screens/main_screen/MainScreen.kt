@@ -1,8 +1,8 @@
 package dev.dotingo.receptory.presentation.screens.main_screen
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,18 +12,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,20 +39,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.data.Recipe
+import dev.dotingo.receptory.presentation.components.RadioButtonRow
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
-import dev.dotingo.receptory.presentation.components.RecipeSearchBar
 import dev.dotingo.receptory.ui.icons.SettingsIcon
-import dev.dotingo.receptory.ui.icons.arrows.DownArrowIcon
+import dev.dotingo.receptory.ui.icons.arrows.FilledArrowDownIcon
+import dev.dotingo.receptory.ui.icons.arrows.FilledArrowUpIcon
+import dev.dotingo.receptory.ui.icons.arrows.OutlinedArrowDownIcon
+import dev.dotingo.receptory.ui.icons.arrows.OutlinedArrowUpIcon
 import dev.dotingo.receptory.ui.theme.Dimens.bigImageSize
 import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
@@ -57,21 +66,20 @@ import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
+    viewModel: MainScreenViewModel = hiltViewModel(),
     navigateToRecipeScreen: (String) -> Unit,
     navigateToEditRecipeScreen: () -> Unit,
     navigateToShoppingListMenuScreen: () -> Unit,
     navigateToTimerScreen: () -> Unit,
     navigateToSettingsScreen: () -> Unit
 ) {
-    val recipesListState = remember { mutableStateOf(emptyList<Recipe>()) }
-    val db = Firebase.firestore
+    val recipesListState by viewModel.recipesListState.collectAsStateWithLifecycle()
+    val isFavFilter by viewModel.isFavoriteFilterOn.collectAsStateWithLifecycle()
+    val isSortFilterOpen by viewModel.isSortFilterOpen.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        getAllRecipes(db) { recipes ->
-            recipesListState.value = recipes
-        }
+        viewModel.fetchAllRecipes()
     }
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(title = {
@@ -87,7 +95,7 @@ fun MainScreen(
                         modifier = Modifier.padding(end = extraSmallPadding)
                     )
                     Icon(
-                        imageVector = DownArrowIcon,
+                        imageVector = FilledArrowDownIcon,
                         contentDescription = "Выбрать категорию",
                         modifier = Modifier.size(smallMediumIconSize)
                     )
@@ -122,36 +130,61 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
-        if (recipesListState.value.isEmpty()) {
+        if (recipesListState.isEmpty()) {
             EmptyMenuScreen(
+                modifier = modifier,
                 onEditRecipeClick = { navigateToEditRecipeScreen() },
                 innerPadding = innerPadding
             )
         } else {
             RecipeContent(
+                modifier = modifier,
                 innerPadding = innerPadding,
-                db = db,
-                recipesListState = recipesListState.value,
+                recipesListState = recipesListState,
+                isFavFilter = isFavFilter,
+                isSortFilterOpen = isSortFilterOpen,
                 navigateToRecipeScreen = navigateToRecipeScreen,
-                onUpdateRecipes = {
-                    recipesListState.value = it
+                onDeleteClicked = { key ->
+                    viewModel.deleteRecipe(key)
+                },
+                onFavoriteClicked = { key, isLiked ->
+                    viewModel.changeLike(key, isLiked)
+                },
+                onSortFilterClicked = {
+                    viewModel.changeSortFilter(it)
+                },
+                onFavoriteFilterClicked = {
+                    viewModel.changeFavFilter(it)
                 }
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeContent(
+    modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
-    db: FirebaseFirestore,
     recipesListState: List<Recipe>,
+    isFavFilter: Boolean,
+    isSortFilterOpen: Boolean,
     navigateToRecipeScreen: (String) -> Unit,
-    onUpdateRecipes: (List<Recipe>) -> Unit // Передаём функцию обновления
+    onDeleteClicked: (key: String) -> Unit,
+    onFavoriteClicked: (key: String, isLiked: Boolean) -> Unit,
+    onSortFilterClicked: (Boolean) -> Unit,
+    onFavoriteFilterClicked: (Boolean) -> Unit
 ) {
+    val filters = listOf(
+        stringResource(R.string.by_name_sort),
+        stringResource(R.string.by_rating_sort),
+        stringResource(R.string.by_calories_sort),
+        stringResource(R.string.by_changes_sort)
+    )
+    var selectedFilter by remember { mutableIntStateOf(3) }
     var searchText by remember { mutableStateOf("") }
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(horizontal = commonHorizontalPadding)
             .padding(innerPadding)
@@ -161,12 +194,71 @@ fun RecipeContent(
             onTextChange = { searchText = it },
             placeholder = stringResource(R.string.search_placeholder),
             onClearClicked = { searchText = "" },
-            onFilterClicked = {},
-            onFavoriteClicked = {}
+            onSortFilterClicked = { isOpen ->
+                onSortFilterClicked(isOpen)
+            },
+            onFavoriteFilterClicked = { isFavorite ->
+                onFavoriteFilterClicked(isFavorite)
+            }
         )
+        if (isSortFilterOpen) {
+            BasicAlertDialog(onDismissRequest = {
+                onSortFilterClicked(false)
+            }) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight(),
+                    shape = MaterialTheme.shapes.large,
+                    tonalElevation = AlertDialogDefaults.TonalElevation
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            stringResource(R.string.sorting),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        repeat(filters.size) {
+                            RadioButtonRow(
+                                checked = selectedFilter == it,
+                                text = filters[it],
+                                onCheckedChange = { selectedFilter = it })
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                        var down by remember { mutableStateOf(false) }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(modifier = Modifier.clickable { down = !down }) {
+                                Icon(
+                                    imageVector = if (down) FilledArrowDownIcon else OutlinedArrowDownIcon,
+                                    contentDescription = ""
+                                )
+                                Icon(
+                                    imageVector = if (down) OutlinedArrowUpIcon else FilledArrowUpIcon,
+                                    contentDescription = ""
+                                )
+                            }
+                            TextButton(
+                                onClick = { }
+                            ) { Text(stringResource(R.string.ok)) }
+                        }
+
+                    }
+                }
+            }
+        }
         LazyColumn {
-            items(recipesListState) { recipe ->
+            val filteredCategories = recipesListState.filter {
+                it.title.contains(searchText, ignoreCase = true) &&
+                        (!isFavFilter || it.favorite)
+            }
+            items(filteredCategories,
+                key = { it.key }) { recipe ->
                 RecipeCard(
+                    modifier = Modifier.animateItem(),
                     title = recipe.title,
                     image = recipe.imageUrl,
                     kcal = recipe.kcal,
@@ -176,23 +268,8 @@ fun RecipeContent(
                     onRecipeClicked = {
                         navigateToRecipeScreen(recipe.key)
                     },
-                    onDeleteClicked = {
-                        deleteRecipe(db, recipe.key) {
-                            // Обновляем состояние после удаления
-                            getAllRecipes(db) { updatedRecipes ->
-                                onUpdateRecipes(updatedRecipes)
-                            }
-                        }
-                    },
-                    onFavoriteClicked = {
-                        changeLike(
-                            db = db,
-                            key = recipe.key,
-                            isLiked = recipe.favorite,
-                            recipes = recipesListState,
-                            onUpdateRecipes = onUpdateRecipes
-                        )
-                    }
+                    onDeleteClicked = { onDeleteClicked(recipe.key) },
+                    onFavoriteClicked = { onFavoriteClicked(recipe.key, recipe.favorite) }
                 )
             }
             item {
@@ -204,11 +281,12 @@ fun RecipeContent(
 
 @Composable
 private fun EmptyMenuScreen(
+    modifier: Modifier = Modifier,
     onEditRecipeClick: () -> Unit,
     innerPadding: PaddingValues
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(innerPadding)
@@ -244,55 +322,4 @@ private fun EmptyMenuScreen(
             onEditRecipeClick()
         }
     }
-}
-
-
-private fun changeLike(
-    db: FirebaseFirestore,
-    key: String,
-    isLiked: Boolean,
-    recipes: List<Recipe>,
-    onUpdateRecipes: (List<Recipe>) -> Unit
-) {
-    db.collection("recipes")
-        .document(key)
-        .update("favorite", !isLiked)
-        .addOnSuccessListener {
-            val updatedRecipes = recipes.map { recipe ->
-                if (recipe.key == key) recipe.copy(favorite = !isLiked) else recipe
-            }
-            onUpdateRecipes(updatedRecipes)
-        }
-}
-
-private fun getAllRecipes(
-    db: FirebaseFirestore,
-    onRecipes: (List<Recipe>) -> Unit
-) {
-    val userId = FirebaseAuth.getInstance().currentUser?.uid
-    db.collection("recipes")
-        .whereEqualTo("userId", userId).get()
-        .addOnSuccessListener { result ->
-            onRecipes(result.toObjects(Recipe::class.java))
-        }
-        .addOnFailureListener {
-            Log.d("MyLog", "${it.message}")
-        }
-}
-
-private fun deleteRecipe(
-    db: FirebaseFirestore,
-    key: String,
-    onDeleted: () -> Unit // Колбэк для уведомления об успешном удалении
-) {
-    db.collection("recipes")
-        .document(key)
-        .delete()
-        .addOnSuccessListener {
-            Log.d("Firestore", "Документ успешно удалён")
-            onDeleted() // Уведомляем об успешном удалении
-        }
-        .addOnFailureListener { e ->
-            Log.e("Firestore", "Ошибка удаления документа", e)
-        }
 }

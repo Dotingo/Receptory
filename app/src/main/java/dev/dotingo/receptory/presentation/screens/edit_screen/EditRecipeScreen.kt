@@ -1,5 +1,6 @@
 package dev.dotingo.receptory.presentation.screens.edit_screen
 
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -56,7 +58,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.presentation.components.CategoryEditScreenMenu
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryButton
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
@@ -80,6 +81,7 @@ import dev.dotingo.receptory.ui.theme.starColor
 @Composable
 fun EditRecipeScreen(
     modifier: Modifier = Modifier,
+    key: String,
     viewModel: EditRecipeViewModel = hiltViewModel(),
     navigateBack: () -> Unit
 ) {
@@ -91,12 +93,24 @@ fun EditRecipeScreen(
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        viewModel.onImageSelected(uri)
+        uri?.let {
+            viewModel.onImageSelected(uri)
+        }
+    }
+
+    LaunchedEffect(key) {
+        viewModel.initialize(key)
     }
 
     Scaffold(topBar = {
         CenterAlignedTopAppBar(
-            title = { Text(stringResource(R.string.add_recipe)) },
+            title = {
+                Text(
+                    if (key.isEmpty()) stringResource(R.string.add_recipe) else stringResource(
+                        R.string.edit_recipe
+                    )
+                )
+            },
             navigationIcon = {
                 CircleIcon(
                     modifier = Modifier.padding(start = smallPadding),
@@ -107,14 +121,16 @@ fun EditRecipeScreen(
                 }
             },
             actions = {
-                IconButton(
-                    onClick = {}
-                ) {
-                    Icon(
-                        imageVector = WebIcon,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        contentDescription = stringResource(R.string.add_interner_recipe)
-                    )
+                if (key.isEmpty()) {
+                    IconButton(
+                        onClick = {}
+                    ) {
+                        Icon(
+                            imageVector = WebIcon,
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            contentDescription = stringResource(R.string.add_interner_recipe)
+                        )
+                    }
                 }
             })
     }, bottomBar = {
@@ -123,11 +139,11 @@ fun EditRecipeScreen(
                 .padding(horizontal = commonHorizontalPadding)
                 .padding(top = smallPadding)
                 .navigationBarsPadding(),
-            text = stringResource(R.string.add),
+            text = if (key.isEmpty()) stringResource(R.string.add) else stringResource(R.string.edit),
             enabled = isButtonEnabled
         ) {
             if (uiState.title.isNotEmpty()) {
-                viewModel.saveRecipe( onSaved = navigateBack, onError = {})
+                viewModel.saveRecipe(key, onSaved = navigateBack, onError = {})
             } else {
                 Toast.makeText(
                     context,
@@ -151,7 +167,7 @@ fun EditRecipeScreen(
                     modifier = Modifier.weight(1f),
                     value = uiState.title,
                     onValueChange = { viewModel.onFieldChange(EditRecipeField.TITLE, it) },
-                    label = stringResource(R.string.recipe_name),
+                    label = stringResource(R.string.name),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
                         imeAction = ImeAction.Next
@@ -192,14 +208,18 @@ fun EditRecipeScreen(
                         .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
+                Log.d("MyLog", "EditRecipeScreen: ${uiState.selectedImageUri}")
                 Spacer(Modifier.height(mediumPadding))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ReceptoryButton(
-                    text = stringResource(R.string.add_image)
+                    text = if (uiState.selectedImageUri == null) stringResource(R.string.add_image) else stringResource(
+                        R.string.edit_image
+                    )
                 ) {
                     imageLauncher.launch("image/*")
                 }
+                if (uiState.selectedImageUri.toString().isEmpty()) viewModel.onImageSelected(null)
                 if (uiState.selectedImageUri != null) {
                     IconButton(onClick = { viewModel.onImageSelected(null) }) {
                         Icon(
@@ -227,17 +247,12 @@ fun EditRecipeScreen(
                 )
             )
             Spacer(Modifier.height(mediumPadding))
-            CategoryEditScreenMenu(
+            CategoryEditDialog(
                 modifier = Modifier.fillMaxWidth(),
                 userId = userId,
-                selectedItem = uiState.selectedCategories,
+                viewModel = viewModel,
                 label = stringResource(R.string.category)
-            ) { selected ->
-                viewModel.onFieldChange(
-                    EditRecipeField.SELECTED_CATEGORIES,
-                    selected.joinToString(", ")
-                )
-            }
+            )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(
                 value = uiState.cookingTime,
@@ -253,7 +268,11 @@ fun EditRecipeScreen(
                 ReceptoryInputField(
                     modifier = Modifier.weight(1f),
                     value = uiState.portions,
-                    onValueChange = { viewModel.onFieldChange(EditRecipeField.PORTIONS, it) },
+                    onValueChange = { input ->
+                        viewModel.onFieldChange(
+                            EditRecipeField.PORTIONS,
+                            input.filter { it in "0123456789" })
+                    },
                     label = stringResource(R.string.portions),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -265,7 +284,11 @@ fun EditRecipeScreen(
                 ReceptoryInputField(
                     modifier = Modifier.weight(1f),
                     value = uiState.kcal,
-                    onValueChange = { viewModel.onFieldChange(EditRecipeField.KCAL, it) },
+                    onValueChange = { input ->
+                        viewModel.onFieldChange(
+                            EditRecipeField.KCAL,
+                            input.filter { it in "0123456789" })
+                    },
                     label = stringResource(R.string.calories),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -275,14 +298,6 @@ fun EditRecipeScreen(
                 )
             }
             Spacer(Modifier.height(mediumPadding))
-            ReceptoryLargeInputField(
-                value = uiState.ingredients,
-                onValueChange = { viewModel.onFieldChange(EditRecipeField.INGREDIENTS, it) },
-                label = stringResource(R.string.ingredients),
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences
-                )
-            )
             Text(
                 buildAnnotatedString {
                     withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
@@ -293,15 +308,15 @@ fun EditRecipeScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = extraSmallPadding)
             )
-            Spacer(Modifier.height(mediumPadding))
             ReceptoryLargeInputField(
-                value = uiState.cookingSteps,
-                onValueChange = { viewModel.onFieldChange(EditRecipeField.COOKING_STEPS, it) },
-                label = stringResource(R.string.cooking_steps),
+                value = uiState.ingredients,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.INGREDIENTS, it) },
+                label = stringResource(R.string.ingredients),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
                 )
             )
+            Spacer(Modifier.height(mediumPadding))
             Text(
                 buildAnnotatedString {
                     withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold)) {
@@ -311,6 +326,14 @@ fun EditRecipeScreen(
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = extraSmallPadding)
+            )
+            ReceptoryLargeInputField(
+                value = uiState.cookingSteps,
+                onValueChange = { viewModel.onFieldChange(EditRecipeField.COOKING_STEPS, it) },
+                label = stringResource(R.string.cooking_steps),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences
+                )
             )
             Spacer(Modifier.height(mediumPadding))
             ReceptoryInputField(

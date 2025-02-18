@@ -1,15 +1,17 @@
 package dev.dotingo.receptory.ui.theme
-import android.os.Build
+
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import dev.dotingo.receptory.presentation.screens.settings_screen.ThemeValues
 
-private val lightScheme = lightColorScheme(
+private val lightColorScheme = lightColorScheme(
     primary = primaryLight,
     onPrimary = onPrimaryLight,
     primaryContainer = primaryContainerLight,
@@ -47,7 +49,7 @@ private val lightScheme = lightColorScheme(
     surfaceContainerHighest = surfaceContainerHighestLight,
 )
 
-private val darkScheme = darkColorScheme(
+private val darkColorScheme = darkColorScheme(
     primary = primaryDark,
     onPrimary = onPrimaryDark,
     primaryContainer = primaryContainerDark,
@@ -87,24 +89,56 @@ private val darkScheme = darkColorScheme(
 
 @Composable
 fun ReceptoryTheme(
+    appTheme: String?,
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-  val colorScheme = when {
-      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-          val context = LocalContext.current
-          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-      }
-      
-      darkTheme -> darkScheme
-      else -> lightScheme
-  }
 
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = AppTypography,
-    content = content
-  )
+    val colorScheme = when (appTheme) {
+        ThemeValues.SYSTEM_DEFAULT.title -> {
+            if (darkTheme) {
+                darkColorScheme
+            } else {
+                lightColorScheme
+            }
+        }
+
+        ThemeValues.LIGHT_MODE.title -> {
+            lightColorScheme
+        }
+
+        ThemeValues.DARK_MODE.title -> {
+            darkColorScheme
+        }
+
+        null -> {
+            if (darkTheme) {
+                darkColorScheme
+            } else {
+                lightColorScheme
+            }
+        }
+
+        else -> {
+            if (darkTheme) {
+                darkColorScheme
+            } else {
+                lightColorScheme
+            }
+        }
+    }
+    val view = LocalView.current
+    LaunchedEffect(colorScheme) {
+        val window = (view.context as Activity).window
+        WindowCompat.getInsetsController(window, window.decorView)
+            .isAppearanceLightStatusBars = colorScheme == lightColorScheme
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = AppTypography,
+        content = content
+    )
+
 }
 

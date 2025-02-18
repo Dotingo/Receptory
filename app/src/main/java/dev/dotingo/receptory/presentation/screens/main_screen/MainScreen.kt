@@ -1,5 +1,6 @@
 package dev.dotingo.receptory.presentation.screens.main_screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -30,7 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,7 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,7 +53,9 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.data.Recipe
+import dev.dotingo.receptory.presentation.components.CheckboxRow
 import dev.dotingo.receptory.presentation.components.RadioButtonRow
+import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.ui.icons.SettingsIcon
 import dev.dotingo.receptory.ui.icons.arrows.FilledArrowDownIcon
@@ -68,32 +75,50 @@ fun MainScreen(
     modifier: Modifier = Modifier,
     viewModel: MainScreenViewModel = hiltViewModel(),
     navigateToRecipeScreen: (String) -> Unit,
-    navigateToEditRecipeScreen: () -> Unit,
+    navigateToEditRecipeScreen: (String) -> Unit,
     navigateToShoppingListMenuScreen: () -> Unit,
     navigateToTimerScreen: () -> Unit,
     navigateToSettingsScreen: () -> Unit
 ) {
-    val recipesListState by viewModel.recipesListState.collectAsStateWithLifecycle()
+    val recipesList by viewModel.recipesList.collectAsStateWithLifecycle()
+    val categoriesList by viewModel.categoriesList.collectAsStateWithLifecycle()
+
     val isFavFilter by viewModel.isFavoriteFilterOn.collectAsStateWithLifecycle()
     val isSortFilterOpen by viewModel.isSortFilterOpen.collectAsStateWithLifecycle()
+    val isCategoryFilterOpen by viewModel.isCategoryFilterOpen.collectAsStateWithLifecycle()
+    val isDescending by viewModel.isDescending.collectAsStateWithLifecycle()
+
+    val selectedCategories = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(Unit) {
         viewModel.fetchAllRecipes()
+        viewModel.fetchAllCategories()
     }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(title = {
                 Row(verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable {
-
-                    }
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp)
+                        .clickable {
+                            viewModel.changeCategoryFilter(true)
+                        }
                 ) {
                     Text(
-                        text = stringResource(R.string.all_category),
+                        text = if (selectedCategories.isEmpty()) stringResource(R.string.all_category) else selectedCategories[0],
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(end = extraSmallPadding)
                     )
+                    if (selectedCategories.isNotEmpty() && selectedCategories.size != 1) {
+                        Text(
+                            text = "+${selectedCategories.size - 1}",
+                            color = MaterialTheme.colorScheme.secondary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                     Icon(
                         imageVector = FilledArrowDownIcon,
                         contentDescription = "Выбрать категорию",
@@ -119,7 +144,7 @@ fun MainScreen(
         }, bottomBar = {
             ReceptoryBottomBar(
                 onAddRecipeButtonClick = {
-                    navigateToEditRecipeScreen()
+                    navigateToEditRecipeScreen("")
                 },
                 onShoppingListClick = {
                     navigateToShoppingListMenuScreen()
@@ -130,19 +155,20 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
-        if (recipesListState.isEmpty()) {
+        if (recipesList.isEmpty()) {
             EmptyMenuScreen(
                 modifier = modifier,
-                onEditRecipeClick = { navigateToEditRecipeScreen() },
+                onEditRecipeClick = { navigateToEditRecipeScreen("") },
                 innerPadding = innerPadding
             )
         } else {
             RecipeContent(
                 modifier = modifier,
                 innerPadding = innerPadding,
-                recipesListState = recipesListState,
+                recipesListState = recipesList,
                 isFavFilter = isFavFilter,
                 isSortFilterOpen = isSortFilterOpen,
+                navigateToEditRecipeScreen = { navigateToEditRecipeScreen(it) },
                 navigateToRecipeScreen = navigateToRecipeScreen,
                 onDeleteClicked = { key ->
                     viewModel.deleteRecipe(key)
@@ -151,12 +177,76 @@ fun MainScreen(
                     viewModel.changeLike(key, isLiked)
                 },
                 onSortFilterClicked = {
-                    viewModel.changeSortFilter(it)
+                    viewModel.toggleSortFilter()
+                },
+                onDescendingClicked = {
+                    viewModel.changeDescending(!isDescending)
+                },
+                isDescending = isDescending,
+                setSortType = {
+                    viewModel.setSortType(it)
                 },
                 onFavoriteFilterClicked = {
                     viewModel.changeFavFilter(it)
-                }
+                },
+                selectedCategories = selectedCategories
             )
+        }
+        if (isCategoryFilterOpen) {
+            BasicAlertDialog(onDismissRequest = { viewModel.changeCategoryFilter(false) }) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .height(400.dp),
+                    shape = MaterialTheme.shapes.large,
+                    tonalElevation = AlertDialogDefaults.TonalElevation
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            stringResource(R.string.category),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        var searchQuery by remember { mutableStateOf("") }
+                        Row {
+                            ReceptoryInputField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                label = stringResource(R.string.search_placeholder),
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Sentences
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        LazyColumn(modifier = modifier.weight(1f)) {
+                            val filteredCategories = categoriesList.filter {
+                                it.name.contains(searchQuery, ignoreCase = true)
+                            }
+                            items(filteredCategories) { item ->
+                                val isSelected = selectedCategories.contains(item.name)
+                                CheckboxRow(text = item.name, checked = isSelected) {
+                                    if (isSelected) {
+                                        selectedCategories.remove(item.name)
+                                    } else {
+                                        selectedCategories.add(item.name)
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TextButton(
+                            onClick = {
+                                viewModel.changeCategoryFilter(false)
+                            },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(stringResource(R.string.ok))
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -170,18 +260,23 @@ fun RecipeContent(
     isFavFilter: Boolean,
     isSortFilterOpen: Boolean,
     navigateToRecipeScreen: (String) -> Unit,
+    navigateToEditRecipeScreen: (String) -> Unit,
     onDeleteClicked: (key: String) -> Unit,
     onFavoriteClicked: (key: String, isLiked: Boolean) -> Unit,
     onSortFilterClicked: (Boolean) -> Unit,
-    onFavoriteFilterClicked: (Boolean) -> Unit
+    onDescendingClicked: () -> Unit,
+    isDescending: Boolean,
+    setSortType: (SortType) -> Unit,
+    onFavoriteFilterClicked: (Boolean) -> Unit,
+    selectedCategories: List<String>
 ) {
-    val filters = listOf(
+    val sortFiltersOptions = listOf(
+        stringResource(R.string.by_changes_sort),
         stringResource(R.string.by_name_sort),
         stringResource(R.string.by_rating_sort),
-        stringResource(R.string.by_calories_sort),
-        stringResource(R.string.by_changes_sort)
+        stringResource(R.string.by_calories_sort)
     )
-    var selectedFilter by remember { mutableIntStateOf(3) }
+    val (selectedOption, onOptionSelected) = remember { mutableStateOf(sortFiltersOptions[0]) }
     var searchText by remember { mutableStateOf("") }
     Column(
         modifier = modifier
@@ -196,6 +291,7 @@ fun RecipeContent(
             onClearClicked = { searchText = "" },
             onSortFilterClicked = { isOpen ->
                 onSortFilterClicked(isOpen)
+                Log.d("MyLog", "isOpen: $isOpen")
             },
             onFavoriteFilterClicked = { isFavorite ->
                 onFavoriteFilterClicked(isFavorite)
@@ -218,31 +314,41 @@ fun RecipeContent(
                             style = MaterialTheme.typography.titleLarge
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        repeat(filters.size) {
-                            RadioButtonRow(
-                                checked = selectedFilter == it,
-                                text = filters[it],
-                                onCheckedChange = { selectedFilter = it })
+                        Column(Modifier.selectableGroup()) {
+                            sortFiltersOptions.forEach { text ->
+                                RadioButtonRow(
+                                    text = text,
+                                    selectedOption = selectedOption,
+                                    onOptionSelected = {
+                                        onOptionSelected(it)
+                                        when (it) {
+                                            sortFiltersOptions[0] -> setSortType(SortType.DATE)
+                                            sortFiltersOptions[1] -> setSortType(SortType.NAME)
+                                            sortFiltersOptions[2] -> setSortType(SortType.RATING)
+                                            sortFiltersOptions[3] -> setSortType(SortType.CALORIES)
+                                        }
+                                    }
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(24.dp))
-                        var down by remember { mutableStateOf(false) }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Row(modifier = Modifier.clickable { down = !down }) {
+                            Row(modifier = Modifier.clickable { onDescendingClicked() }) {
                                 Icon(
-                                    imageVector = if (down) FilledArrowDownIcon else OutlinedArrowDownIcon,
+                                    imageVector = if (isDescending) FilledArrowDownIcon else OutlinedArrowDownIcon,
                                     contentDescription = ""
                                 )
                                 Icon(
-                                    imageVector = if (down) OutlinedArrowUpIcon else FilledArrowUpIcon,
+                                    imageVector = if (isDescending) OutlinedArrowUpIcon else FilledArrowUpIcon,
                                     contentDescription = ""
                                 )
                             }
                             TextButton(
-                                onClick = { }
+                                onClick = { onSortFilterClicked(false) }
                             ) { Text(stringResource(R.string.ok)) }
                         }
 
@@ -253,23 +359,30 @@ fun RecipeContent(
         LazyColumn {
             val filteredCategories = recipesListState.filter {
                 it.title.contains(searchText, ignoreCase = true) &&
-                        (!isFavFilter || it.favorite)
+                        (!isFavFilter || it.favorite) &&
+                        if (selectedCategories.isNotEmpty()) {
+                            selectedCategories.all { selected ->
+                                selected in it.category
+                            }
+                        } else true
             }
             items(filteredCategories,
-                key = { it.key }) { recipe ->
+                key = { it.recipeKey }) { recipe ->
                 RecipeCard(
                     modifier = Modifier.animateItem(),
                     title = recipe.title,
-                    image = recipe.imageUrl,
+                    image = recipe.image,
                     kcal = recipe.kcal,
                     category = recipe.category,
                     isFavorite = recipe.favorite,
                     rating = recipe.rating,
                     onRecipeClicked = {
-                        navigateToRecipeScreen(recipe.key)
+                        navigateToRecipeScreen(recipe.recipeKey)
                     },
-                    onDeleteClicked = { onDeleteClicked(recipe.key) },
-                    onFavoriteClicked = { onFavoriteClicked(recipe.key, recipe.favorite) }
+                    onDeleteClick = { onDeleteClicked(recipe.recipeKey) },
+                    onEditClick = { navigateToEditRecipeScreen(recipe.recipeKey) },
+                    onShareClick = {},
+                    onFavoriteClicked = { onFavoriteClicked(recipe.recipeKey, recipe.favorite) }
                 )
             }
             item {
@@ -323,3 +436,4 @@ private fun EmptyMenuScreen(
         }
     }
 }
+

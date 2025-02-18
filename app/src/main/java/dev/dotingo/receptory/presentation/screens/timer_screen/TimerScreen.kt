@@ -1,6 +1,5 @@
 package dev.dotingo.receptory.presentation.screens.timer_screen
 
-import android.content.res.Configuration
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,7 +45,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -71,7 +69,6 @@ import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.timerControlsButtonSize
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
-import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 import dev.dotingo.receptory.utils.clickVibration
 import dev.dotingo.receptory.utils.repeatVibration
 import java.util.Locale
@@ -421,13 +418,5 @@ fun TimerControls(
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
-    }
-}
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun TimerScreenPreview() {
-    ReceptoryTheme {
-        TimerScreen {}
     }
 }

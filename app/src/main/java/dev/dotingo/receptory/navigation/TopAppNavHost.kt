@@ -17,8 +17,8 @@ import androidx.navigation.toRoute
 import dev.dotingo.receptory.presentation.MainViewModel
 import dev.dotingo.receptory.presentation.screens.edit_screen.EditRecipeScreen
 import dev.dotingo.receptory.presentation.screens.OnboardingScreen
-import dev.dotingo.receptory.presentation.screens.RecipeScreen
-import dev.dotingo.receptory.presentation.screens.SettingsScreen
+import dev.dotingo.receptory.presentation.screens.recipe_screen.RecipeScreen
+import dev.dotingo.receptory.presentation.screens.settings_screen.SettingsScreen
 import dev.dotingo.receptory.presentation.screens.WelcomeScreen
 import dev.dotingo.receptory.presentation.screens.authorization.LoginScreen
 import dev.dotingo.receptory.presentation.screens.authorization.RegistrationScreen
@@ -102,8 +102,8 @@ fun TopAppNavHost(
                             launchSingleTop = true
                         }
                     },
-                    navigateToEditRecipeScreen = {
-                        navController.navigate(EditRecipeScreenNav) {
+                    navigateToEditRecipeScreen = { key ->
+                        navController.navigate(EditRecipeScreenNav(key)) {
                             launchSingleTop = true
                         }
                     },
@@ -135,12 +135,17 @@ fun TopAppNavHost(
                         navController.navigate(ShoppingListMenuScreenNav) {
                             launchSingleTop = true
                         }
+                    },
+                    navigateToEditRecipeScreen = { key ->
+                        navController.navigate(EditRecipeScreenNav(key)) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
 
-            composable<EditRecipeScreenNav> {
-                EditRecipeScreen {
+            composable<EditRecipeScreenNav> { navEntry ->
+                EditRecipeScreen(key = navEntry.toRoute<EditRecipeScreenNav>().recipeKey) {
                     navigateBack(navController)
                 }
             }
@@ -150,16 +155,19 @@ fun TopAppNavHost(
                     navigateBack = {
                         navigateBack(navController)
                     },
-                    navigateToShoppingList = {
-                        navController.navigate(ShoppingListScreenNav) {
+                    navigateToShoppingList = { key, name ->
+                        navController.navigate(ShoppingListScreenNav(key, name)) {
                             launchSingleTop = true
                         }
                     }
                 )
             }
 
-            composable<ShoppingListScreenNav> {
-                ShoppingListScreen {
+            composable<ShoppingListScreenNav> { navEntry ->
+                ShoppingListScreen(
+                    shoppingListId = navEntry.toRoute<ShoppingListScreenNav>().shoppingListId,
+                    shoppingListName = navEntry.toRoute<ShoppingListScreenNav>().shoppingName
+                ) {
                     navigateBack(navController)
                 }
             }

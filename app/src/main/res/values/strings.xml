@@ -51,13 +51,13 @@
     <string name="cooking_steps">"Этапы готовки"</string>
     <string name="stage">Этап %1$s</string>
     <string name="add">Добавить</string>
-    <string name="recipe_name">Название</string>
+    <string name="name">Название</string>
     <string name="add_image">Добавить изображение</string>
     <string name="remove_image">Убрать изображение</string>
     <string name="confirm_password">Повторите пароль</string>
     <string name="add_interner_recipe">Добавить рецепт из интернета</string>
     <string name="help">"Подсказка: "</string>
-    <string name="ingredients_help">пишите разные ингридиенты с новых строк</string>
+    <string name="ingredients_help">пишите разные ингредиенты с новых строк</string>
     <string name="cooking_help">пишите этапы готовки с новых строк</string>
     <string name="timer">Таймер</string>
     <string name="add_timer">Добавить таймер</string>
@@ -72,7 +72,8 @@
     <string name="category">Категория</string>
     <string name="email_confirmed">Email подтвержден!</string>
     <string name="waiting_email_confirmation">Ожидание подтверждения email</string>
-    <string name="shopping_list_title">Список покупок</string>
+    <string name="shopping_list_name">Название списка</string>
+    <string name="shopping_lists_title">Списки покупок</string>
     <string name="general_settings">Общие</string>
     <string name="app_lang_settings">Язык приложения</string>
     <string name="theme_settings">Тема</string>
@@ -87,4 +88,16 @@
     <string name="like">Нравится</string>
     <string name="go_back">Назад</string>
     <string name="rating">Рейтинг %1$s</string>
+    <string name="share">Отправить</string>
+    <string name="edit">Редактировать</string>
+    <string name="delete">Удалить</string>
+    <string name="edit_categories">Редактировать категории</string>
+    <string name="categories">Категории</string>
+    <string name="enable_timer_vibration">Включить вибрацию таймера при его срабатывании</string>
+    <string name="change_password_current_account">Изменить пароль для текущего аккаунта</string>
+    <string name="select_language">Выбрать язык</string>
+    <string name="select_theme">Выбрать тему</string>
+    <string name="edit_recipe">Редактировать рецепт</string>
+    <string name="edit_image">Изменить изоображение</string>
+    <string name="edit_name">Изменить название</string>
 </resources>

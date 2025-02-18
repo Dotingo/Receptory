@@ -2,7 +2,6 @@ package dev.dotingo.receptory.presentation.screens.main_screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +56,7 @@ import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.ui.theme.favoriteColor
 import dev.dotingo.receptory.ui.theme.starColor
+import java.io.File
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -69,7 +69,9 @@ fun RecipeCard(
     isFavorite: Boolean,
     rating: Int,
     onRecipeClicked: () -> Unit,
-    onDeleteClicked: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onShareClick: () -> Unit,
     onFavoriteClicked: () -> Unit
 ) {
     val haptics = LocalHapticFeedback.current
@@ -84,40 +86,40 @@ fun RecipeCard(
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     isExpended = true
                 }
-            ),
+            )
     ) {
         DropdownMenu(expanded = isExpended, onDismissRequest = { isExpended = false }) {
             DropdownMenuItem(
-                text = { Text("Отправить") },
+                text = { Text(stringResource(R.string.share)) },
                 leadingIcon = {
                     Icon(
                         imageVector = ShareIconPadded,
-                        contentDescription = "Отправить",
+                        contentDescription = stringResource(R.string.share),
                         modifier = Modifier.size(22.dp)
                     )
                 },
-                onClick = {})
+                onClick = { onShareClick() })
             DropdownMenuItem(
-                text = { Text("Редактировать") },
+                text = { Text(stringResource(R.string.edit)) },
                 leadingIcon = {
                     Icon(
                         imageVector = EditIconPadded,
-                        contentDescription = "Редактировать",
+                        contentDescription = stringResource(R.string.edit),
                         modifier = Modifier.size(22.dp)
                     )
                 },
-                onClick = {})
+                onClick = { onEditClick() })
             DropdownMenuItem(
-                text = { Text("Удалить") },
+                text = { Text(stringResource(R.string.delete)) },
                 leadingIcon = {
                     Icon(
                         imageVector = TrashIcon,
-                        contentDescription = "Удалить",
+                        contentDescription = stringResource(R.string.delete),
                         modifier = Modifier.size(22.dp)
                     )
                 },
                 onClick = {
-                    onDeleteClicked()
+                    onDeleteClick()
                     isExpended = false
                 })
         }
@@ -127,7 +129,7 @@ fun RecipeCard(
         ) {
             if (image.isNotEmpty()) {
                 AsyncImage(
-                    model = image,
+                    model = File(image),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -142,7 +144,9 @@ fun RecipeCard(
                     Icon(
                         PlaceholderIcon,
                         "",
-                        modifier = Modifier.align(Alignment.Center).fillMaxSize(),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxSize(),
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
@@ -164,16 +168,13 @@ fun RecipeCard(
                     )
                     IconButton(modifier = Modifier.size(mediumIconSize),
                         onClick = {
-
+                            onFavoriteClicked()
                         }
                     ) {
                         Icon(
                             imageVector = if (isFavorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
-                            contentDescription = "Нравится",
-                            tint = favoriteColor,
-                            modifier = Modifier.clickable {
-                                onFavoriteClicked()
-                            }
+                            contentDescription = stringResource(R.string.like),
+                            tint = favoriteColor
                         )
                     }
                 }
@@ -182,7 +183,7 @@ fun RecipeCard(
                         repeat(5) {
                             Icon(
                                 StarIcon,
-                                "Рейтинг",
+                                stringResource(R.string.rating, it),
                                 modifier = Modifier.size(smallMediumIconSize),
                                 tint = if (it < rating) {
                                     starColor
@@ -196,13 +197,14 @@ fun RecipeCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (kcal.isNotEmpty()) {
                         Icon(
-                            KcalIcon, "Каллории",
+                            imageVector = KcalIcon,
+                            contentDescription = stringResource(R.string.kcal),
                             modifier = Modifier.size(extraSmallIconSize)
                         )
                         Spacer(modifier = Modifier.width(tinyPadding))
                         Text(
                             stringResource(R.string.kcal, kcal),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                             modifier = Modifier
@@ -214,9 +216,10 @@ fun RecipeCard(
                     if (category.isNotEmpty()) {
                         Text(
                             category,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
+
                         )
                     }
                 }

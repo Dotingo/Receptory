@@ -1,4 +1,4 @@
-package dev.dotingo.receptory.presentation.screens
+package dev.dotingo.receptory.presentation.screens.recipe_screen
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -35,6 +35,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,12 +55,9 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.data.Recipe
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.ui.icons.EditIcon
 import dev.dotingo.receptory.ui.icons.PlaceholderIcon
@@ -74,9 +72,11 @@ import dev.dotingo.receptory.ui.theme.Dimens.bigImageSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
+import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.onBackgroundDark
 import dev.dotingo.receptory.ui.theme.starColor
+import java.io.File
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,65 +86,63 @@ fun RecipeScreen(
     key: String,
     navigateBack: () -> Unit,
     navigateToShoppingListMenuScreen: () -> Unit,
+    navigateToEditRecipeScreen: (String) -> Unit,
+    viewModel: RecipeScreenViewModel = hiltViewModel()
 ) {
     val listState = rememberLazyListState()
-    val firstVisibleIndex by remember {
-        derivedStateOf { listState.firstVisibleItemIndex }
-    }
-    var showTimer by remember {
-        mutableStateOf(false)
+    val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    var showTimer by remember { mutableStateOf(false) }
+
+    val recipeState = viewModel.recipe
+
+    LaunchedEffect(key) {
+        viewModel.fetchRecipe(key)
     }
 
-    var recipeState by remember { mutableStateOf(Recipe()) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = if (firstVisibleIndex > 0) Color.Unspecified
+                    else Color.Transparent
+                ),
+                title = {},
+                navigationIcon = {
+                    CircleIcon(
+                        modifier = Modifier.padding(start = smallPadding),
+                        imageVector = BackArrowIcon,
+                        contentDescription = "Назад"
+                    ) {
+                        navigateBack()
+                    }
+                },
+                actions = {
+                    CircleIcon(
+                        imageVector = if (recipeState.favorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
+                        contentDescription = "Нравится",
+                        iconSize = mediumIconSize
+                    ) {
+                        viewModel.toggleFavorite()
+                    }
+                    Spacer(Modifier.width(extraSmallPadding))
+                    CircleIcon(
+                        imageVector = ShareIcon,
+                        contentDescription = "Поделиться"
+                    ) {
 
-    LaunchedEffect(Unit) {
-        val db = Firebase.firestore
-        getRecipe(db, key) { recipes ->
-            if (recipes != null) recipeState = recipes
+                    }
+                    Spacer(Modifier.width(extraSmallPadding))
+                    CircleIcon(
+                        modifier = Modifier.padding(end = smallPadding),
+                        imageVector = EditIcon,
+                        contentDescription = "Редактировать"
+                    ) {
+                        navigateToEditRecipeScreen(key)
+                    }
+                }
+            )
         }
-    }
-
-    Scaffold(topBar = {
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = if (firstVisibleIndex > 0) Color.Unspecified
-                else Color.Transparent
-            ),
-            title = {},
-            navigationIcon = {
-                CircleIcon(
-                    modifier = Modifier.padding(start = smallPadding),
-                    imageVector = BackArrowIcon,
-                    contentDescription = "Назад"
-                ) {
-                    navigateBack()
-                }
-            },
-            actions = {
-                CircleIcon(
-                    imageVector = if (recipeState.favorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
-                    contentDescription = "Нравится",
-                    iconSize = mediumIconSize
-                ) {
-
-                }
-                Spacer(Modifier.width(extraSmallPadding))
-                CircleIcon(
-                    imageVector = ShareIcon,
-                    contentDescription = "Поделиться"
-                ) {
-
-                }
-                Spacer(Modifier.width(extraSmallPadding))
-                CircleIcon(
-                    modifier = Modifier.padding(end = smallPadding),
-                    imageVector = EditIcon,
-                    contentDescription = "Редактировать"
-                ) {
-
-                }
-            })
-    }) {
+    ) {
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
@@ -154,10 +152,10 @@ fun RecipeScreen(
         ) {
             item {
                 RecipeHeader(
-                    recipeState.imageUrl,
-                    recipeState.title,
-                    recipeState.category,
-                    recipeState.rating
+                    image = recipeState.image,
+                    title = recipeState.title,
+                    category = recipeState.category,
+                    rating = recipeState.rating
                 )
             }
 
@@ -182,46 +180,45 @@ fun RecipeScreen(
             item {
                 CookingStepsSection(
                     cookingSteps = recipeState.cookingSteps,
-                    onShowTimerChange = { showTimer = it })
-            }
-
-            item {
-                LinkSection(
-                    stringResource(R.string.site_link),
-                    recipeState.websiteUrl
+                    onShowTimerChange = { showTimer = it }
                 )
             }
 
             item {
                 LinkSection(
-                    stringResource(R.string.video_link),
-                    recipeState.videoUrl
+                    title = stringResource(R.string.site_link),
+                    url = recipeState.websiteUrl
+                )
+            }
+
+            item {
+                LinkSection(
+                    title = stringResource(R.string.video_link),
+                    url = recipeState.videoUrl
                 )
             }
         }
-
     }
 }
 
 @Composable
-private fun RecipeHeader(imageUrl: String, title: String, category: String, rating: Int) {
+private fun RecipeHeader(image: String, title: String, category: String, rating: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .height(bigImageSize)
     ) {
-        if (imageUrl.isNotEmpty()){
+        if (image.isNotEmpty()) {
             AsyncImage(
-                imageUrl,
+                File(image),
                 "",
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop,
             )
-        }
-        else{
+        } else {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -231,7 +228,9 @@ private fun RecipeHeader(imageUrl: String, title: String, category: String, rati
                 Icon(
                     PlaceholderIcon,
                     "",
-                    modifier = Modifier.align(Alignment.Center).fillMaxSize(),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxSize(),
                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
@@ -244,7 +243,7 @@ private fun RecipeHeader(imageUrl: String, title: String, category: String, rati
                     Brush.verticalGradient(
                         colors = listOf(Color.Transparent, Color.Black),
                         startY = 0f,
-                        endY = 1500f
+                        endY = 2000f
                     )
                 )
         )
@@ -355,6 +354,7 @@ private fun RecipeInfo(cookingTime: String, portions: String, kcal: String) {
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IngredientsSection(ingredients: String, navigateToShoppingListMenuScreen: () -> Unit) {
     if (ingredients.isNotEmpty()) {
@@ -380,9 +380,26 @@ private fun IngredientsSection(ingredients: String, navigateToShoppingListMenuSc
                 }
             }
             Spacer(Modifier.height(smallPadding))
+            ingredients.lines().forEach { ingredient ->
+                var isSelected by rememberSaveable { mutableStateOf(false) }
+                Text(
+                    ingredient,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                    } else {
+                        MaterialTheme.colorScheme.onBackground
+                    },
+                    modifier = Modifier.clickable {
+                        isSelected = !isSelected
+                    }
+                )
+            }
             Text(
-                ingredients,
-                style = MaterialTheme.typography.bodyLarge
+                text = "*Вы можете помечать ингредиенты нажимая на них",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = mediumPadding)
             )
             HorizontalDivider(
                 Modifier
@@ -421,20 +438,43 @@ private fun CookingStepsSection(
                 }
             }
             Spacer(Modifier.height(smallPadding))
-            
+
             cookingSteps.lines().forEachIndexed { index, step ->
-                Text(
-                    stringResource(R.string.stage, index + 1),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                Text(
-                    step,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(bottom = 5.dp)
-                )
+                var isSelected by rememberSaveable { mutableStateOf(false) }
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        isSelected = !isSelected
+                    }) {
+                    Text(
+                        stringResource(R.string.stage, index + 1),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.secondary.copy(0.5f)
+                        } else {
+                            MaterialTheme.colorScheme.secondary
+                        }
+                    )
+                    Text(
+                        step,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onBackground.copy(0.5f)
+                        } else {
+                            MaterialTheme.colorScheme.onBackground
+                        },
+                        modifier = Modifier
+                            .padding(bottom = 5.dp)
+                    )
+                }
             }
+            Text(
+                text = "*Вы можете помечать этапы нажимая на них",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = mediumPadding)
+            )
             HorizontalDivider(
                 Modifier
                     .padding(vertical = smallPadding)
@@ -488,18 +528,18 @@ private fun LinkSection(title: String, url: String) {
 
 }
 
-private fun getRecipe(
-    db: FirebaseFirestore,
-    key: String,
-    onRecipe: (Recipe?) -> Unit
-) {
-    db.collection("recipes")
-        .document(key)
-        .get()
-        .addOnSuccessListener { result ->
-            onRecipe(result.toObject(Recipe::class.java))
-        }
-        .addOnFailureListener {
-            onRecipe(null)
-        }
-}
+//private fun getRecipe(
+//    db: FirebaseFirestore,
+//    key: String,
+//    onRecipe: (Recipe?) -> Unit
+//) {
+//    db.collection("recipes")
+//        .document(key)
+//        .get()
+//        .addOnSuccessListener { result ->
+//            onRecipe(result.toObject(Recipe::class.java))
+//        }
+//        .addOnFailureListener {
+//            onRecipe(null)
+//        }
+//}

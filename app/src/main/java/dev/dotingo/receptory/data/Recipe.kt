@@ -2,12 +2,12 @@ package dev.dotingo.receptory.data
 
 data class Recipe(
     val userId: String = "",
-    val key: String = "",
+    val recipeKey: String = "",
     val title: String = "",
     val description: String = "",
     val cookingSteps: String = "",
     val category: String = "",
-    val imageUrl: String = "",
+    val image: String = "",
     val favorite: Boolean = false,
     val rating: Int = 0,
     val cookingTime: String = "",

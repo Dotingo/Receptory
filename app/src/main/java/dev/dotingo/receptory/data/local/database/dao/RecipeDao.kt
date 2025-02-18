@@ -1,9 +1,10 @@
-package dev.dotingo.receptory.data.local.database
+package dev.dotingo.receptory.data.local.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -16,11 +17,15 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipe(recipe: RecipeEntity)
 
+    // Обновление рецепта
+    @Update
+    suspend fun updateRecipe(recipe: RecipeEntity)
+
     // Удаление рецепта
-    @Query("DELETE FROM recipes WHERE recipeKey = :recipeKey")
+    @Query("DELETE FROM recipes WHERE recipeId = :recipeKey")
     suspend fun deleteRecipe(recipeKey: String)
 
     // Получение отдельного рецепта по ключу
-    @Query("SELECT * FROM recipes WHERE recipeKey = :recipeKey LIMIT 1")
+    @Query("SELECT * FROM recipes WHERE recipeId = :recipeKey LIMIT 1")
     suspend fun getRecipeByKey(recipeKey: String): RecipeEntity?
 }

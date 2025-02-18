@@ -1,6 +1,7 @@
 package dev.dotingo.receptory.presentation.screens.authorization
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
@@ -38,7 +37,7 @@ import dev.dotingo.receptory.ui.icons.EmailIcon
 import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
-import dev.dotingo.receptory.ui.theme.ReceptoryTheme
+import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 
 @Composable
 fun LoginScreen(
@@ -82,6 +81,16 @@ fun LoginScreen(
             passwordVisibility = state.passwordVisibility,
             onVisibilityChange = viewModel::togglePasswordVisibility
         )
+        Text(
+            text = "Забыли пароль?",
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = tinyPadding)
+                .clickable {
+                    viewModel.resetPassword()
+                },
+            color = MaterialTheme.colorScheme.tertiary
+        )
         Spacer(modifier = Modifier.height(bigPadding))
         ReceptoryMainButton(
             text = stringResource(R.string.login_bt)
@@ -98,12 +107,10 @@ fun LoginScreen(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.error
         )
-
         Spacer(modifier = Modifier.height(bigPadding))
         ClickableText(
-            modifier = Modifier.alpha(0.5f),
             text = stringResource(R.string.continue_without_login),
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onBackground.copy(0.5f),
             fontWeight = FontWeight.SemiBold
         ) {
             viewModel.signOut()
@@ -117,13 +124,5 @@ fun LoginScreen(
         SwitchAuthModeText(stringResource(R.string.no_account), stringResource(R.string.register)) {
             navigateToRegistrationScreen()
         }
-    }
-}
-
-@Preview
-@Composable
-private fun LoginScreenPreview() {
-    ReceptoryTheme {
-        LoginScreen(navigateToMainScreen = {}, navigateToRegistrationScreen = {})
     }
 }

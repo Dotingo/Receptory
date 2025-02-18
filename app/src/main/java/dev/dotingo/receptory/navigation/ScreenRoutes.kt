@@ -23,7 +23,9 @@ data class RecipeScreenNav(
 )
 
 @Serializable
-object EditRecipeScreenNav
+data class  EditRecipeScreenNav(
+    val recipeKey: String = ""
+)
 
 @Serializable
 object TimerScreenNav
@@ -32,7 +34,10 @@ object TimerScreenNav
 object ShoppingListMenuScreenNav
 
 @Serializable
-object ShoppingListScreenNav
+data class ShoppingListScreenNav(
+    val shoppingListId: Long,
+    val shoppingName: String
+)
 
 @Serializable
 object SettingsScreenNav

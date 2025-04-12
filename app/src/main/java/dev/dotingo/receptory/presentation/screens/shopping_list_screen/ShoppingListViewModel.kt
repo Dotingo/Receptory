@@ -1,8 +1,11 @@
 package dev.dotingo.receptory.presentation.screens.shopping_list_screen
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.dotingo.receptory.R
 import dev.dotingo.receptory.data.local.database.dao.ShoppingItemDao
 import dev.dotingo.receptory.data.local.database.dao.ShoppingListDao
 import dev.dotingo.receptory.data.local.database.entities.ShoppingItemEntity
@@ -39,7 +42,7 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun updateShoppingList(shoppingList: ShoppingListEntity){
+    fun updateShoppingList(shoppingList: ShoppingListEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             shoppingListDao.update(shoppingList)
         }
@@ -51,14 +54,14 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    fun updateShoppingItem(shoppingItem: ShoppingItemEntity){
+    fun updateShoppingItem(shoppingItem: ShoppingItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             shoppingItemDao.update(shoppingItem)
         }
     }
 
     private val _shoppingListId = MutableStateFlow<Long?>(null)
-    fun setShoppingListId(id: Long){
+    fun setShoppingListId(id: Long) {
         _shoppingListId.value = id
     }
 
@@ -71,7 +74,6 @@ class ShoppingListViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Добавляем новый элемент в список
     fun addItem(name: String) {
         val listId = _shoppingListId.value ?: return
         viewModelScope.launch(Dispatchers.IO) {
@@ -81,11 +83,32 @@ class ShoppingListViewModel @Inject constructor(
         }
     }
 
-    // Переключаем статус покупки элемента
     fun toggleItemPurchased(item: ShoppingItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             shoppingItemDao.update(item.copy(isPurchased = !item.isPurchased))
         }
     }
 
+    fun shareShoppingList(context: Context, shoppingList: ShoppingListEntity, items: List<ShoppingItemEntity>) {
+        val resources = context.resources
+        val nameLabel = resources.getString(R.string.name)
+
+        val shopText = buildString {
+            appendLine("$nameLabel: ${shoppingList.name}")
+            appendLine()
+            items.forEachIndexed { index, item ->
+                val status = if (item.isPurchased) "✔" else "✖"
+                appendLine("$status ${index + 1}. ${item.name}")
+            }
+        }
+
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, shopText)
+            type = "text/plain"
+        }
+
+        val shareIntent = Intent.createChooser(sendIntent, "Share list")
+        context.startActivity(shareIntent)
+    }
 }

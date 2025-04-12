@@ -13,6 +13,9 @@ interface ShoppingItemDao {
     @Insert
     suspend fun insert(shoppingItem: ShoppingItemEntity): Long
 
+    @Insert
+    suspend fun insertAll(shoppingItems: List<ShoppingItemEntity>): List<Long>
+
     @Update
     suspend fun update(shoppingItem: ShoppingItemEntity)
 

@@ -31,6 +31,10 @@ data class  EditRecipeScreenNav(
 object TimerScreenNav
 
 @Serializable
+object CategoriesEditScreenNav
+
+
+@Serializable
 object ShoppingListMenuScreenNav
 
 @Serializable

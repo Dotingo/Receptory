@@ -40,10 +40,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
@@ -55,8 +55,9 @@ import dev.dotingo.receptory.ui.icons.PlusIcon
 import dev.dotingo.receptory.ui.icons.ShareIconPadded
 import dev.dotingo.receptory.ui.icons.TrashIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
+import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.tinyBigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,24 +72,28 @@ fun ShoppingListsMenuScreen(
     var isCreateListDialogExpanded by remember { mutableStateOf(false) }
     var isEditListDialogExpanded by remember { mutableStateOf(false) }
     var editingList by remember { mutableStateOf<ShoppingListEntity?>(null) }
-    Scaffold(topBar = {
-        CenterAlignedTopAppBar(title = { Text(stringResource(R.string.shopping_lists_title)) },
-            navigationIcon = {
-                CircleIcon(
-                    modifier = Modifier.padding(start = smallPadding),
-                    imageVector = BackArrowIcon,
-                    contentDescription = "Назад"
-                ) {
-                    navigateBack()
+    val context = LocalContext.current
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(stringResource(R.string.shopping_lists_title)) },
+                navigationIcon = {
+                    CircleIcon(
+                        modifier = Modifier.padding(start = smallPadding),
+                        imageVector = BackArrowIcon,
+                        contentDescription = stringResource(R.string.go_back)
+                    ) {
+                        navigateBack()
+                    }
                 }
-            }
-        )
-    },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(shape = CircleShape, onClick = {
                 isCreateListDialogExpanded = true
             }) {
-                Icon(PlusIcon, "Добавить лист покупок")
+                Icon(PlusIcon, stringResource(R.string.create_shopping_list))
             }
         }
     ) { paddingValues ->
@@ -102,12 +107,12 @@ fun ShoppingListsMenuScreen(
                     tonalElevation = AlertDialogDefaults.TonalElevation
                 ) {
                     var shoppingListName by remember { mutableStateOf("") }
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(mediumPadding)) {
                         Text(
                             text = stringResource(R.string.shopping_list_name),
                             style = MaterialTheme.typography.titleLarge
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         ReceptoryInputField(
                             modifier = Modifier.padding(end = tinyPadding),
                             value = shoppingListName,
@@ -117,10 +122,10 @@ fun ShoppingListsMenuScreen(
                                 capitalization = KeyboardCapitalization.Sentences
                             )
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         TextButton(
                             onClick = {
-                                if (shoppingListName.trim().isNotEmpty()){
+                                if (shoppingListName.trim().isNotEmpty()) {
                                     viewModel.addShoppingList(shoppingListName)
                                     isCreateListDialogExpanded = false
                                 }
@@ -142,12 +147,12 @@ fun ShoppingListsMenuScreen(
                     tonalElevation = AlertDialogDefaults.TonalElevation
                 ) {
                     var shoppingListName by remember { mutableStateOf(editingList!!.name) }
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(mediumPadding)) {
                         Text(
                             text = stringResource(R.string.edit_name),
                             style = MaterialTheme.typography.titleLarge
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         ReceptoryInputField(
                             value = shoppingListName,
                             onValueChange = { shoppingListName = it },
@@ -156,13 +161,13 @@ fun ShoppingListsMenuScreen(
                                 capitalization = KeyboardCapitalization.Sentences
                             )
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
                             TextButton(onClick = { isEditListDialogExpanded = false }) {
-                                Text("Отмена")
+                                Text(stringResource(R.string.cancel))
                             }
                             TextButton(onClick = {
                                 if (shoppingListName.trim().isNotEmpty()) {
@@ -198,7 +203,13 @@ fun ShoppingListsMenuScreen(
                         editingList = listWithItems.shoppingList
                         isEditListDialogExpanded = true
                     },
-                    onShareClick = {},
+                    onShareClick = {
+                        viewModel.shareShoppingList(
+                            context,
+                            listWithItems.shoppingList,
+                            listWithItems.items
+                        )
+                    },
                     name = listWithItems.shoppingList.name,
                     purchasedCount = listWithItems.items.count { it.isPurchased },
                     listSize = listWithItems.items.size
@@ -225,7 +236,6 @@ fun ShoppingListCard(
     val haptics = LocalHapticFeedback.current
     Card(
         modifier = modifier
-            .padding(horizontal = commonHorizontalPadding)
             .fillMaxWidth()
             .combinedClickable(
                 onClick = {
@@ -246,17 +256,17 @@ fun ShoppingListCard(
                     Icon(
                         imageVector = ShareIconPadded,
                         contentDescription = stringResource(R.string.share),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(tinyBigPadding)
                     )
                 },
                 onClick = { onShareClick() })
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.edit)) },
+                text = { Text(stringResource(R.string.rename)) },
                 leadingIcon = {
                     Icon(
                         imageVector = EditIconPadded,
-                        contentDescription = stringResource(R.string.edit),
-                        modifier = Modifier.size(22.dp)
+                        contentDescription = stringResource(R.string.rename),
+                        modifier = Modifier.size(tinyBigPadding)
                     )
                 },
                 onClick = {
@@ -269,7 +279,7 @@ fun ShoppingListCard(
                     Icon(
                         imageVector = TrashIcon,
                         contentDescription = stringResource(R.string.delete),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(tinyBigPadding)
                     )
                 },
                 onClick = {
@@ -277,7 +287,7 @@ fun ShoppingListCard(
                     isListToolsExpanded = false
                 })
         }
-        Row(modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)) {
+        Row(modifier = Modifier.padding(smallPadding)) {
             Text(
                 name,
                 modifier = Modifier.weight(1f)
@@ -285,5 +295,5 @@ fun ShoppingListCard(
             Text("$purchasedCount/${listSize}")
         }
     }
-    Spacer(Modifier.height(10.dp))
+    Spacer(Modifier.height(smallPadding))
 }

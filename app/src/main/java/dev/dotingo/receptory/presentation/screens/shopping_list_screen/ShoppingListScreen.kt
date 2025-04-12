@@ -53,12 +53,12 @@ import dev.dotingo.receptory.data.local.database.entities.ShoppingItemEntity
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.ui.icons.EditIconPadded
-import dev.dotingo.receptory.ui.icons.MoreVertIcon
 import dev.dotingo.receptory.ui.icons.PlusIcon
 import dev.dotingo.receptory.ui.icons.TrashIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
+import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.tinyBigPadding
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,6 +79,7 @@ fun ShoppingListScreen(
     }
     var isEditListItemDialogExpanded by remember { mutableStateOf(false) }
     var editingListItem by remember { mutableStateOf<ShoppingItemEntity?>(null) }
+
     Scaffold(topBar = {
         TopAppBar(title = {
             Text(
@@ -95,16 +96,6 @@ fun ShoppingListScreen(
                 ) {
                     navigateBack()
                 }
-            },
-            actions = {
-                CircleIcon(
-                    modifier = Modifier.padding(end = smallPadding),
-                    imageVector = MoreVertIcon,
-                    iconColor = MaterialTheme.colorScheme.onBackground,
-                    contentDescription = "Ещё"
-                ) {
-
-                }
             }
         )
     }) { innerPadding ->
@@ -112,7 +103,6 @@ fun ShoppingListScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = commonHorizontalPadding)
         ) {
             Row {
                 ReceptoryInputField(
@@ -145,7 +135,7 @@ fun ShoppingListScreen(
                     shoppingItems.sortedWith(compareBy({ it.isPurchased }, { it.itemId }))
                 items(sortedItems, key = { it.itemId }) { item ->
                     ShoppingListElement(
-                        modifier = modifier.animateItem(),
+                        modifier = Modifier.animateItem(),
                         shoppingItems = item,
                         onItemClick = { viewModel.toggleItemPurchased(item) },
                         onDeleteClick = { viewModel.deleteShoppingItem(item) },
@@ -167,12 +157,12 @@ fun ShoppingListScreen(
                         tonalElevation = AlertDialogDefaults.TonalElevation
                     ) {
                         var updatedItemName by remember { mutableStateOf(editingListItem!!.name) }
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(mediumPadding)) {
                             Text(
                                 text = "Редактировать элемент",
                                 style = MaterialTheme.typography.titleLarge
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(mediumPadding))
                             ReceptoryInputField(
                                 value = updatedItemName,
                                 onValueChange = { updatedItemName = it },
@@ -181,7 +171,7 @@ fun ShoppingListScreen(
                                     capitalization = KeyboardCapitalization.Sentences
                                 )
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(mediumPadding))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End
@@ -243,7 +233,7 @@ fun ShoppingListElement(
                     Icon(
                         imageVector = EditIconPadded,
                         contentDescription = stringResource(R.string.edit),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(tinyBigPadding)
                     )
                 },
                 onClick = {
@@ -256,7 +246,7 @@ fun ShoppingListElement(
                     Icon(
                         imageVector = TrashIcon,
                         contentDescription = stringResource(R.string.delete),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(tinyBigPadding)
                     )
                 },
                 onClick = {
@@ -276,7 +266,7 @@ fun ShoppingListElement(
             } else {
                 null
             },
-            modifier = Modifier.padding(vertical = 15.dp)
+            modifier = Modifier.padding(vertical = mediumPadding)
         )
         HorizontalDivider()
     }

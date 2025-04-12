@@ -1,6 +1,8 @@
 package dev.dotingo.receptory.presentation.screens.settings_screen
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,9 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.RadioButtonRow
+import dev.dotingo.receptory.ui.theme.ReceptoryTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,8 +37,6 @@ fun SingleSelectDialog(
     title: String,
     optionsList: List<String>,
     defaultSelected: Int,
-    submitButtonText: String,
-    dismissButtonText: String,
     onSubmitButtonClick: (Int) -> Unit,
     onDismissRequest: (Boolean) -> Unit
 ) {
@@ -43,7 +45,9 @@ fun SingleSelectDialog(
         mutableIntStateOf(defaultSelected)
     }
 
-    BasicAlertDialog(onDismissRequest = { onDismissRequest(false) }) {
+    BasicAlertDialog(
+        onDismissRequest = { onDismissRequest(false) },
+    ) {
         Surface(
             modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)
         ) {
@@ -82,3 +86,59 @@ fun SingleSelectDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LogoutDialog(
+    modifier: Modifier = Modifier,
+    onDismissRequest: (Boolean) -> Unit,
+    onSubmitButtonClick: () -> Unit,
+) {
+    BasicAlertDialog(onDismissRequest = { onDismissRequest(false) }) {
+        Surface(
+            modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)
+        ) {
+            Column(modifier = modifier.padding(16.dp)) {
+
+                Text(
+                    text = stringResource(R.string.sure_logout),
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                Spacer(modifier = Modifier.height(5.dp))
+
+                Text(
+                    text = stringResource(R.string.sure_logout_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(
+                        onClick = {
+                            onSubmitButtonClick()
+                        }
+                    ) { Text(stringResource(R.string.yes)) }
+                    TextButton(
+                        onClick = {
+                            onDismissRequest.invoke(false)
+                        }
+                    ) { Text(stringResource(R.string.cancel)) }
+                }
+
+            }
+        }
+    }
+}
+
+
+@Preview
+@Composable
+private fun LogoutDialogPreview() {
+    ReceptoryTheme("") {
+        LogoutDialog(onDismissRequest = {}) {}
+    }
+
+}

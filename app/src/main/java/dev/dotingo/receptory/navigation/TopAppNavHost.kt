@@ -23,6 +23,7 @@ import dev.dotingo.receptory.presentation.screens.WelcomeScreen
 import dev.dotingo.receptory.presentation.screens.authorization.LoginScreen
 import dev.dotingo.receptory.presentation.screens.authorization.RegistrationScreen
 import dev.dotingo.receptory.presentation.screens.main_screen.MainScreen
+import dev.dotingo.receptory.presentation.screens.settings_screen.CategoriesEditScreen
 import dev.dotingo.receptory.presentation.screens.shopping_list_screen.ShoppingListScreen
 import dev.dotingo.receptory.presentation.screens.shopping_list_screen.ShoppingListsMenuScreen
 import dev.dotingo.receptory.presentation.screens.timer_screen.TimerScreen
@@ -40,7 +41,7 @@ fun TopAppNavHost(
         if (isFirstLaunch) WelcomeScreenNav else if (!isUserLoggedIn) RegistrationScreenNav else MainScreenNav
 
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
@@ -49,15 +50,19 @@ fun TopAppNavHost(
             startDestination = startDestination
         ) {
             composable<WelcomeScreenNav> {
-                WelcomeScreen(navigateToOnboardingScreen = {
-                    navController.navigate(OnboardingScreenNav) {
-                        launchSingleTop = true
-                    }
-                })
+                WelcomeScreen(
+                    modifier = modifier,
+                    navigateToOnboardingScreen = {
+                        navController.navigate(OnboardingScreenNav) {
+                            launchSingleTop = true
+                            popUpTo(0)
+                        }
+                    })
             }
 
             composable<OnboardingScreenNav> {
                 OnboardingScreen(
+                    modifier = modifier,
                     navigateToRegistrationScreen = {
                         viewModel.setFirstLaunch(false)
                         navController.navigate(RegistrationScreenNav) {
@@ -68,6 +73,7 @@ fun TopAppNavHost(
 
             composable<RegistrationScreenNav> {
                 RegistrationScreen(
+                    modifier = modifier,
                     navigateToLoginScreen = {
                         navController.navigate(LoginScreenNav) {
                             launchSingleTop = true
@@ -76,6 +82,7 @@ fun TopAppNavHost(
                     navigateToMainScreen = {
                         navController.navigate(MainScreenNav) {
                             launchSingleTop = true
+                            popUpTo(0)
                         }
                     }
                 )
@@ -84,12 +91,14 @@ fun TopAppNavHost(
             composable<LoginScreenNav>(
             ) {
                 LoginScreen(
+                    modifier = modifier,
                     navigateToRegistrationScreen = {
                         navigateBack(navController)
                     },
                     navigateToMainScreen = {
                         navController.navigate(MainScreenNav) {
                             launchSingleTop = true
+                            popUpTo(0)
                         }
                     }
                 )
@@ -97,6 +106,7 @@ fun TopAppNavHost(
 
             composable<MainScreenNav> {
                 MainScreen(
+                    modifier = modifier,
                     navigateToRecipeScreen = { key ->
                         navController.navigate(RecipeScreenNav(key)) {
                             launchSingleTop = true
@@ -136,6 +146,11 @@ fun TopAppNavHost(
                             launchSingleTop = true
                         }
                     },
+                    navigateToTimerScreen = {
+                        navController.navigate(TimerScreenNav) {
+                            launchSingleTop = true
+                        }
+                    },
                     navigateToEditRecipeScreen = { key ->
                         navController.navigate(EditRecipeScreenNav(key)) {
                             launchSingleTop = true
@@ -145,13 +160,17 @@ fun TopAppNavHost(
             }
 
             composable<EditRecipeScreenNav> { navEntry ->
-                EditRecipeScreen(key = navEntry.toRoute<EditRecipeScreenNav>().recipeKey) {
+                EditRecipeScreen(
+                    modifier = modifier,
+                    key = navEntry.toRoute<EditRecipeScreenNav>().recipeKey
+                ) {
                     navigateBack(navController)
                 }
             }
 
             composable<ShoppingListMenuScreenNav> {
                 ShoppingListsMenuScreen(
+                    modifier = modifier,
                     navigateBack = {
                         navigateBack(navController)
                     },
@@ -165,6 +184,7 @@ fun TopAppNavHost(
 
             composable<ShoppingListScreenNav> { navEntry ->
                 ShoppingListScreen(
+                    modifier = modifier,
                     shoppingListId = navEntry.toRoute<ShoppingListScreenNav>().shoppingListId,
                     shoppingListName = navEntry.toRoute<ShoppingListScreenNav>().shoppingName
                 ) {
@@ -173,19 +193,42 @@ fun TopAppNavHost(
             }
 
             composable<TimerScreenNav> {
-                TimerScreen(navigateBack = {
-                    navigateBack(navController)
-                })
+                TimerScreen(
+                    modifier = modifier,
+                    navigateBack = {
+                        navigateBack(navController)
+                    }
+                )
             }
 
+
             composable<SettingsScreenNav> {
-                SettingsScreen(navigateBack = {
-                    navigateBack(navController)
-                }, navigateToRegistrationScreen = {
-                    navController.navigate(RegistrationScreenNav) {
-                        launchSingleTop = true
+                SettingsScreen(
+                    modifier = modifier,
+                    navigateBack = {
+                        navigateBack(navController)
+                    },
+                    navigateToRegistrationScreen = {
+                        navController.navigate(RegistrationScreenNav) {
+                            launchSingleTop = true
+                            popUpTo(0)
+                        }
+                    },
+                    navigateToCategoriesEditScreen = {
+                        navController.navigate(CategoriesEditScreenNav) {
+                            launchSingleTop = true
+                        }
                     }
-                })
+                )
+            }
+
+            composable<CategoriesEditScreenNav> {
+                CategoriesEditScreen(
+                    modifier = modifier,
+                    navigateBack = {
+                        navigateBack(navController)
+                    }
+                )
             }
         }
     }

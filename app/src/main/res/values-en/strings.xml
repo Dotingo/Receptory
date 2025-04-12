@@ -21,7 +21,6 @@
     <string name="google">Via Google</string>
     <string name="tf_name">Name</string>
     <string name="registration_bt">Sign Up</string>
-    <string name="continue_without_reg">Continue without signing up</string>
     <string name="registration_title">Registration</string>
     <string name="create_first_account">Create your first account</string>
     <string name="or">or</string>
@@ -29,7 +28,6 @@
     <string name="login">Log in</string>
     <string name="login_title">Login</string>
     <string name="welcome_back">Welcome back! Log in to your account</string>
-    <string name="continue_without_login">Continue without logging in</string>
     <string name="login_bt">Log In</string>
     <string name="no_account">Don\'t have an account yet?</string>
     <string name="register">Create one</string>
@@ -39,7 +37,7 @@
     <string name="adding_now">Start adding now</string>
     <string name="add_recipe">Add recipe</string>
     <string name="all_category">All</string>
-    <string name="kcal">%1$kcal</string>
+    <string name="kcal">%1$skcal</string>
     <string name="search_placeholder">Search</string>
     <string name="site_link">Website link</string>
     <string name="video_link">Video link</string>
@@ -50,7 +48,7 @@
     <string name="calories">Calories</string>
     <string name="ingredients">Ingredients</string>
     <string name="cooking_steps">Cooking steps</string>
-    <string name="stage">Stage %1$s</string>
+    <string name="stage">Step %1$s</string>
     <string name="add">Add</string>
     <string name="name">Name</string>
     <string name="add_image">Add image</string>
@@ -82,8 +80,6 @@
     <string name="your_account">Your account</string>
     <string name="сhange_password">Change password</string>
     <string name="logout">Log out</string>
-    <string name="storage">Storage</string>
-    <string name="export_recipes">Export recipes</string>
     <string name="recipe_image">Recipe image</string>
     <string name="like">Like</string>
     <string name="go_back">Go Back</string>
@@ -100,4 +96,19 @@
     <string name="edit_recipe">Edit recipe</string>
     <string name="edit_image">Edit image</string>
     <string name="edit_name">Edit name</string>
+    <string name="shopping_list_title">Shopping list</string>
+    <string name="cook_steps_hint">*You can mark steps by tapping on them.</string>
+    <string name="ingredient_hint">*You can mark ingredients by tapping on them. Unmarked ingredients will be added to the shopping list</string>
+    <string name="create_shopping_list">Create a shopping list</string>
+    <string name="rename">Rename</string>
+    <string name="tools">Tools</string>
+    <string name="shopping_list_for">%1$s shopping list</string>
+    <string name="sure_logout">Are you sure you want to log out of your Receptory account?</string>
+    <string name="sure_logout_description">To use the app again, you will have to log in to your account again</string>
+    <string name="yes">Yes</string>
+    <string name="dark_mode">Dark</string>
+    <string name="light_mode">Light</string>
+    <string name="edit_category">Edit category</string>
+    <string name="delete_category">Delete category</string>
+    <string name="timer_finished_title">Timer is finished</string>
 </resources>

@@ -72,7 +72,6 @@ fun OnboardingScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = commonHorizontalPadding)
                 .verticalScroll(rememberScrollState())
         ) {
             InfoTextWithLabel(

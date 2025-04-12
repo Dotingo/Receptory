@@ -9,15 +9,19 @@ import androidx.compose.runtime.Immutable
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.dotingo.receptory.data.Recipe
+import dev.dotingo.receptory.FirebaseUploadWorker
 import dev.dotingo.receptory.data.local.database.dao.RecipeDao
 import dev.dotingo.receptory.data.local.database.entities.CategoryEntity
+import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
 import dev.dotingo.receptory.data.local.repository.CategoryRepository
 import dev.dotingo.receptory.di.ReceptoryApp
-import dev.dotingo.receptory.presentation.screens.main_screen.toDomain
-import dev.dotingo.receptory.presentation.screens.main_screen.toEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +30,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
@@ -114,24 +119,23 @@ class EditRecipeViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val recipeEntity = recipeDao.getRecipeByKey(key) // Метод нужно добавить в RecipeDao
             recipeEntity?.let { entity ->
-                val recipe = entity.toDomain()
                 withContext(Dispatchers.Main) {
-                    oldImageUrl = recipe.image // Сохранение старого изображения
+                    oldImageUrl = entity.imageUrl // Сохранение старого изображения
                     _uiState.value = EditRecipeUiState(
-                        key = recipe.recipeKey,
-                        title = recipe.title,
-                        description = recipe.description,
-                        cookingTime = recipe.cookingTime,
-                        portions = recipe.portions,
-                        kcal = recipe.kcal,
-                        ingredients = recipe.ingredients,
-                        cookingSteps = recipe.cookingSteps,
-                        siteLink = recipe.websiteUrl,
-                        videoLink = recipe.videoUrl,
-                        isFavorite = recipe.favorite,
-                        rating = recipe.rating,
-                        selectedCategories = recipe.category,
-                        selectedImageUri = recipe.image.toUri()
+                        key = entity.recipeId,
+                        title = entity.title,
+                        description = entity.description,
+                        cookingTime = entity.cookingTime,
+                        portions = entity.portions,
+                        kcal = entity.kcal,
+                        ingredients = entity.ingredients,
+                        cookingSteps = entity.cookingSteps,
+                        siteLink = entity.websiteUrl,
+                        videoLink = entity.videoUrl,
+                        isFavorite = entity.favorite,
+                        rating = entity.rating,
+                        selectedCategories = entity.category,
+                        selectedImageUri = entity.imageUrl.toUri()
                     )
                 }
             }
@@ -183,22 +187,21 @@ class EditRecipeViewModel @Inject constructor(
         onSaved: () -> Unit,
         onError: () -> Unit
     ) {
-        // Если ключ пустой, генерируем новый
         _key.value = key.ifEmpty { "${UUID.randomUUID()}-${_uid.value}" }
         _isButtonEnabled.value = false
         val state = _uiState.value
         val userId = auth.uid ?: ""
 
-        // Если выбрано новое изображение, сохраняем его и получаем новый путь,
-        // иначе используем старый путь (если изображение не менялось)
         val newImagePath = if (state.selectedImageUri != null) {
-            saveCompressedRecipeImage()
+            if (state.selectedImageUri.path == oldImageUrl) {
+                oldImageUrl ?: ""
+            } else {
+                saveCompressedRecipeImage()
+            }
         } else {
-            ""
+            oldImageUrl ?: ""
         }
 
-        // Если пользователь выбрал новое изображение и старый путь существует,
-        // удаляем старый файл (если он отличается от нового)
         if (state.selectedImageUri == null && !oldImageUrl.isNullOrEmpty()) {
             val oldImageFile = File(oldImageUrl)
             if (oldImageFile.exists()) {
@@ -207,8 +210,8 @@ class EditRecipeViewModel @Inject constructor(
             }
         }
 
-        val recipe = Recipe(
-            recipeKey = _key.value,
+        val recipe = RecipeEntity(
+            recipeId = _key.value,
             userId = userId,
             title = state.title.trim(),
             description = state.description.trim(),
@@ -222,56 +225,65 @@ class EditRecipeViewModel @Inject constructor(
             ingredients = state.ingredients.trim(),
             websiteUrl = state.siteLink.trim(),
             videoUrl = state.videoLink.trim(),
-            image = newImagePath
+            imageUrl = newImagePath
         )
         saveRecipeToDatabase(recipe, onSaved, onError)
     }
 
     private fun saveCompressedRecipeImage(): String {
-        val uri = _uiState.value.selectedImageUri
-        if (uri != null) {
-            // Получаем InputStream исходного изображения
-            val inputStream = application.contentResolver.openInputStream(uri)
-            // Декодируем поток в Bitmap
-            val originalBitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-            // Генерируем уникальное имя файла для изображения
-            val fileName = "${UUID.randomUUID()}-${_uid.value}-${System.currentTimeMillis()}.jpg"
-            // Формируем File во внутреннем хранилище приложения
-            val imageFile = File(application.filesDir, fileName)
+        val uri = _uiState.value.selectedImageUri ?: return ""
+        val inputStream = when (uri.scheme) {
+            "content" -> application.contentResolver.openInputStream(uri)
+            "file" -> FileInputStream(uri.path?.let { File(it) })
+            else -> null
+        } ?: return ""
 
-            try {
-                // Открываем поток для записи в файл
-                val outputStream = FileOutputStream(imageFile)
-                // Сжимаем изображение и записываем в файл (JPEG, качество 50)
-                originalBitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
-                outputStream.flush()
-                outputStream.close()
-            } catch (e: IOException) {
-                e.printStackTrace()
-                return ""
-            }
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream.close()
 
-            // Возвращаем абсолютный путь к сохранённому файлу, который можно записать в базу данных
-            return imageFile.absolutePath
+        val fileName = "${UUID.randomUUID()}-${_uid.value}-${System.currentTimeMillis()}.jpg"
+        val imageFile = File(application.filesDir, fileName)
+
+        try {
+            val outputStream = FileOutputStream(imageFile)
+            originalBitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+            outputStream.flush()
+            outputStream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+            return ""
         }
-        return ""
+        return imageFile.absolutePath
     }
 
     private fun saveRecipeToDatabase(
-        recipe: Recipe,
+        recipe: RecipeEntity,
         onSaved: () -> Unit,
         onError: () -> Unit
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val existingRecipe = recipeDao.getRecipeByKey(recipe.recipeKey)
+                val existingRecipe = recipeDao.getRecipeByKey(recipe.recipeId)
                 if (existingRecipe != null) {
-                    recipeDao.updateRecipe(recipe.toEntity()) // Добавь метод update в DAO
+                    recipeDao.updateRecipe(recipe) // Добавь метод update в DAO
                 } else {
-                    recipeDao.insertRecipe(recipe.toEntity())
+                    recipeDao.insertRecipe(recipe)
                 }
                 withContext(Dispatchers.Main) {
+                    val constraints = Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .build()
+
+                    val firebaseUploadWorkRequest =
+                        OneTimeWorkRequestBuilder<FirebaseUploadWorker>()
+                            .setConstraints(constraints)
+                            .build()
+
+                    WorkManager.getInstance(application.applicationContext).enqueueUniqueWork(
+                        "firebase_sync",
+                        ExistingWorkPolicy.REPLACE, // Если нужно заменить предыдущее задание, если оно ещё не выполнено
+                        firebaseUploadWorkRequest
+                    )
                     onSaved()
                 }
             } catch (e: IOException) {
@@ -304,253 +316,3 @@ data class EditRecipeUiState(
 enum class EditRecipeField {
     TITLE, DESCRIPTION, COOKING_TIME, PORTIONS, KCAL, INGREDIENTS, COOKING_STEPS, SITE_LINK, VIDEO_LINK, SELECTED_CATEGORIES
 }
-
-//old code
-
-//    fun initialize(key: String) {
-//        if (key.isNotEmpty()) {
-//            loadRecipe(key)
-//        }
-//    }
-
-//    private fun loadRecipe(key: String) {
-//        firestore.collection("recipes").document(key)
-//            .get()
-//            .addOnSuccessListener { document ->
-//                if (document != null && document.exists()) {
-//                    val recipe = document.toObject(Recipe::class.java)
-//                    recipe?.let {
-//                        oldImageUrl = it.imageUrl
-//                        _uiState.value = _uiState.value.copy(
-//                            title = it.title,
-//                            description = it.description,
-//                            cookingTime = it.cookingTime,
-//                            portions = it.portions,
-//                            kcal = it.kcal,
-//                            ingredients = it.ingredients,
-//                            cookingSteps = it.cookingSteps,
-//                            siteLink = it.websiteUrl,
-//                            videoLink = it.videoUrl,
-//                            isFavorite = it.favorite,
-//                            rating = it.rating,
-//                            selectedCategories = it.category,
-//                            selectedImageUri = it.imageUrl.let { uri -> Uri.parse(uri) },
-//                            key = recipe.recipeKey
-//                        )
-//                        _key.value = key
-//                    }
-//                }
-//            }
-//            .addOnFailureListener { exception ->
-//                Log.e("EditRecipeViewModel", "Failed to load recipe: ${exception.message}")
-//            }
-//    }
-
-//    private fun getAllCategories(
-//        onCategories: (List<Category>) -> Unit
-//    ) {
-//        firestore.collection("categories")
-//            .whereEqualTo("userId", _uid).get()
-//            .addOnSuccessListener { result ->
-//                onCategories(result.toObjects(Category::class.java))
-//            }
-//            .addOnFailureListener {
-//                Log.d("MyLog", "${it.message}")
-//            }
-//    }
-
-//        saveRecipeImage(
-//            recipe = recipe,
-//            onSaved = onSaved,
-//            onError = onError
-//        )
-
-
-//    private fun getAllCategories(
-//        onCategories: (List<Category>) -> Unit
-//    ) {
-//        firestore.collection("categories")
-//            .whereEqualTo("userId", _uid).get()
-//            .addOnSuccessListener { result ->
-//                onCategories(result.toObjects(Category::class.java))
-//            }
-//            .addOnFailureListener {
-//                Log.d("MyLog", "${it.message}")
-//            }
-//    }
-
-//    fun saveRecipe(
-//        onSaved: () -> Unit,
-//        onError: () -> Unit
-//    ) {
-//        _isButtonEnabled.value = false
-//        val state = _uiState.value
-//        val userId = auth.uid
-//        val recipe = Recipe(
-//            userId = userId ?: "",
-//            title = state.title.trim(),
-//            description = state.description.trim(),
-//            category = state.selectedCategories,
-//            cookingSteps = state.cookingSteps.trim(),
-//            favorite = state.isFavorite,
-//            rating = state.rating,
-//            cookingTime = state.cookingTime.trim(),
-//            portions = state.portions.trim(),
-//            kcal = state.kcal.trim(),
-//            ingredients = state.ingredients.trim(),
-//            websiteUrl = state.siteLink.trim(),
-//            videoUrl = state.videoLink.trim(),
-//            recipeKey = _key.value
-//        )
-//        saveRecipeImage(
-//            recipe = recipe,
-//            onSaved = onSaved,
-//            onError = onError
-//        )
-//    }
-//
-//    private fun saveRecipeImage(
-//        recipe: Recipe,
-//        onSaved: () -> Unit,
-//        onError: () -> Unit
-//    ) {
-//        val uri = _uiState.value.selectedImageUri
-//
-//        // Сценарий 1: Пользователь убрал картинку (uri == null) и ранее была загруженная картинка
-//        if (uri == null && !oldImageUrl.isNullOrEmpty()) {
-//            storage.getReferenceFromUrl(oldImageUrl!!)
-//                .delete()
-//                .addOnSuccessListener {
-//                    Log.d("EditRecipeViewModel", "Old image deleted successfully")
-//                }
-//                .addOnFailureListener { e ->
-//                    Log.e("EditRecipeViewModel", "Failed to delete old image: ${e.message}")
-//                }
-//            // Обновляем рецепт с пустым imageUrl
-//            saveRecipeToFirestore(
-//                url = "",
-//                recipe = recipe,
-//                onSaved = onSaved,
-//                onError = onError
-//            )
-//        }
-//        // Сценарий 2: Пользователь выбрал новую картинку (uri != null и не начинается с "http")
-//        else if (uri != null && !uri.toString().startsWith("http")) {
-//            // Если ранее была установлена картинка, удаляем её
-//            oldImageUrl?.takeIf { it.isNotEmpty() }?.let { url ->
-//                storage.getReferenceFromUrl(url)
-//                    .delete()
-//                    .addOnSuccessListener {
-//                        Log.d("EditRecipeViewModel", "Old image deleted successfully")
-//                    }
-//                    .addOnFailureListener { e ->
-//                        Log.e("EditRecipeViewModel", "Failed to delete old image: ${e.message}")
-//                    }
-//            }
-//            val storageRef = storage.reference
-//                .child("recipe_images")
-//                .child("image_${UUID.randomUUID()}-${_uid.value}.jpg")
-//            val uploadTask = storageRef.putFile(uri)
-//            uploadTask
-//                .addOnSuccessListener {
-//                    storageRef.downloadUrl.addOnSuccessListener { url ->
-//                        saveRecipeToFirestore(
-//                            url = url.toString(),
-//                            recipe = recipe,
-//                            onSaved = onSaved,
-//                            onError = onError
-//                        )
-//                    }
-//                }
-//                .addOnFailureListener { ex ->
-//                    Log.e("EditRecipeViewModel", "Image upload failed: ${ex.message}")
-//                    onError()
-//                }
-//        }
-//        // Сценарий 3: Пользователь не изменил изображение (uri != null и уже содержит URL картинки)
-//        else {
-//            // Если изображение не изменялось, но старое изображение требуется удалить (например, пользователь решил убрать его),
-//            // можно проверить и удалить его, если оно все ещё хранится.
-//            if (uri != null && uri.toString().startsWith("http") && _uiState.value.selectedImageUri == null) {
-//                // Если вдруг состояние пришло с uri == null, а предыдущий URL не пустой, удаляем старое изображение
-//                oldImageUrl?.takeIf { it.isNotEmpty() }?.let { url ->
-//                    storage.getReferenceFromUrl(url)
-//                        .delete()
-//                        .addOnSuccessListener {
-//                            Log.d("EditRecipeViewModel", "Old image deleted successfully")
-//                        }
-//                        .addOnFailureListener { e ->
-//                            Log.e("EditRecipeViewModel", "Failed to delete old image: ${e.message}")
-//                        }
-//                }
-//                saveRecipeToFirestore(
-//                    url = "",
-//                    recipe = recipe,
-//                    onSaved = onSaved,
-//                    onError = onError
-//                )
-//            } else {
-//                // Если изображение не изменялось, просто используем существующий URL
-//                saveRecipeToFirestore(
-//                    url = uri?.toString() ?: "",
-//                    recipe = recipe,
-//                    onSaved = onSaved,
-//                    onError = onError
-//                )
-//            }
-//        }
-//    }
-//
-//    private fun saveRecipeToFirestore(
-//        url: String = "",
-//        recipe: Recipe,
-//        onSaved: () -> Unit,
-//        onError: () -> Unit
-//    ) {
-//        val fsPath = firestore.collection("recipes")
-//        val recipeKey = recipe.recipeKey
-//
-//        if (recipeKey.isNotEmpty()) {
-//            fsPath.document(recipeKey)
-//                .update(
-//                    mapOf(
-//                        "title" to recipe.title,
-//                        "description" to recipe.description,
-//                        "category" to recipe.category,
-//                        "cookingSteps" to recipe.cookingSteps,
-//                        "favorite" to recipe.favorite,
-//                        "rating" to recipe.rating,
-//                        "cookingTime" to recipe.cookingTime,
-//                        "portions" to recipe.portions,
-//                        "kcal" to recipe.kcal,
-//                        "ingredients" to recipe.ingredients,
-//                        "websiteUrl" to recipe.websiteUrl,
-//                        "videoUrl" to recipe.videoUrl,
-//                        "imageUrl" to url
-//                    )
-//                )
-//                .addOnSuccessListener {
-//                    onSaved()
-//                }
-//                .addOnFailureListener {
-//                    Log.d("MyLog", it.message.toString())
-//                    onError()
-//                }
-//        } else {
-//            val newKey = fsPath.document().id
-//            fsPath.document(newKey)
-//                .set(
-//                    recipe.copy(
-//                        recipeKey = newKey,
-//                        imageUrl = url
-//                    )
-//                )
-//                .addOnSuccessListener {
-//                    onSaved()
-//                }
-//                .addOnFailureListener {
-//                    Log.d("MyLog", it.message.toString())
-//                    onError()
-//                }
-//        }
-//    }

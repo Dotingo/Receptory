@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -52,7 +53,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.data.Recipe
+import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
 import dev.dotingo.receptory.presentation.components.CheckboxRow
 import dev.dotingo.receptory.presentation.components.RadioButtonRow
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
@@ -64,8 +65,8 @@ import dev.dotingo.receptory.ui.icons.arrows.OutlinedArrowDownIcon
 import dev.dotingo.receptory.ui.icons.arrows.OutlinedArrowUpIcon
 import dev.dotingo.receptory.ui.theme.Dimens.bigImageSize
 import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
+import dev.dotingo.receptory.ui.theme.Dimens.mediumPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallMediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 
@@ -89,6 +90,7 @@ fun MainScreen(
     val isDescending by viewModel.isDescending.collectAsStateWithLifecycle()
 
     val selectedCategories = remember { mutableStateListOf<String>() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.fetchAllRecipes()
@@ -96,36 +98,38 @@ fun MainScreen(
     }
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = {
-                Row(verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                        .clickable {
-                            viewModel.changeCategoryFilter(true)
-                        }
-                ) {
-                    Text(
-                        text = if (selectedCategories.isEmpty()) stringResource(R.string.all_category) else selectedCategories[0],
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(end = extraSmallPadding)
-                    )
-                    if (selectedCategories.isNotEmpty() && selectedCategories.size != 1) {
+            CenterAlignedTopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .padding(horizontal = smallPadding)
+                            .clickable {
+                                viewModel.changeCategoryFilter(true)
+                            }
+                    ) {
                         Text(
-                            text = "+${selectedCategories.size - 1}",
-                            color = MaterialTheme.colorScheme.secondary,
-                            style = MaterialTheme.typography.bodySmall
+                            text = if (selectedCategories.isEmpty()) stringResource(R.string.all_category) else selectedCategories[0],
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(end = extraSmallPadding)
+                        )
+                        if (selectedCategories.isNotEmpty() && selectedCategories.size != 1) {
+                            Text(
+                                text = "+${selectedCategories.size - 1}",
+                                color = MaterialTheme.colorScheme.secondary,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Icon(
+                            imageVector = FilledArrowDownIcon,
+                            contentDescription = "Выбрать категорию",
+                            modifier = Modifier.size(smallMediumIconSize)
                         )
                     }
-                    Icon(
-                        imageVector = FilledArrowDownIcon,
-                        contentDescription = "Выбрать категорию",
-                        modifier = Modifier.size(smallMediumIconSize)
-                    )
-                }
-            },
+                },
                 actions = {
                     IconButton(
                         onClick = {
@@ -189,6 +193,12 @@ fun MainScreen(
                 onFavoriteFilterClicked = {
                     viewModel.changeFavFilter(it)
                 },
+                onShareClick = { recipe ->
+                    viewModel.shareRecipe(
+                        recipe = recipe,
+                        context = context
+                    )
+                },
                 selectedCategories = selectedCategories
             )
         }
@@ -202,24 +212,22 @@ fun MainScreen(
                     shape = MaterialTheme.shapes.large,
                     tonalElevation = AlertDialogDefaults.TonalElevation
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(mediumPadding)) {
                         Text(
                             stringResource(R.string.category),
                             style = MaterialTheme.typography.titleLarge
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         var searchQuery by remember { mutableStateOf("") }
-                        Row {
-                            ReceptoryInputField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                label = stringResource(R.string.search_placeholder),
-                                keyboardOptions = KeyboardOptions(
-                                    capitalization = KeyboardCapitalization.Sentences
-                                )
+                        ReceptoryInputField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            label = stringResource(R.string.search_placeholder),
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Sentences
                             )
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
+                        )
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         LazyColumn(modifier = modifier.weight(1f)) {
                             val filteredCategories = categoriesList.filter {
                                 it.name.contains(searchQuery, ignoreCase = true)
@@ -235,7 +243,7 @@ fun MainScreen(
                                 }
                             }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         TextButton(
                             onClick = {
                                 viewModel.changeCategoryFilter(false)
@@ -256,7 +264,7 @@ fun MainScreen(
 fun RecipeContent(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
-    recipesListState: List<Recipe>,
+    recipesListState: List<RecipeEntity>,
     isFavFilter: Boolean,
     isSortFilterOpen: Boolean,
     navigateToRecipeScreen: (String) -> Unit,
@@ -268,6 +276,7 @@ fun RecipeContent(
     isDescending: Boolean,
     setSortType: (SortType) -> Unit,
     onFavoriteFilterClicked: (Boolean) -> Unit,
+    onShareClick: (RecipeEntity) -> Unit,
     selectedCategories: List<String>
 ) {
     val sortFiltersOptions = listOf(
@@ -281,7 +290,6 @@ fun RecipeContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = commonHorizontalPadding)
             .padding(innerPadding)
     ) {
         RecipeSearchBar(
@@ -308,12 +316,12 @@ fun RecipeContent(
                     shape = MaterialTheme.shapes.large,
                     tonalElevation = AlertDialogDefaults.TonalElevation
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(mediumPadding)) {
                         Text(
                             stringResource(R.string.sorting),
                             style = MaterialTheme.typography.titleLarge
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(mediumPadding))
                         Column(Modifier.selectableGroup()) {
                             sortFiltersOptions.forEach { text ->
                                 RadioButtonRow(
@@ -331,7 +339,7 @@ fun RecipeContent(
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(bigPadding))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -366,23 +374,24 @@ fun RecipeContent(
                             }
                         } else true
             }
-            items(filteredCategories,
-                key = { it.recipeKey }) { recipe ->
+            items(
+                filteredCategories,
+                key = { it.recipeId }) { recipe ->
                 RecipeCard(
                     modifier = Modifier.animateItem(),
                     title = recipe.title,
-                    image = recipe.image,
+                    image = recipe.imageUrl,
                     kcal = recipe.kcal,
                     category = recipe.category,
                     isFavorite = recipe.favorite,
                     rating = recipe.rating,
                     onRecipeClicked = {
-                        navigateToRecipeScreen(recipe.recipeKey)
+                        navigateToRecipeScreen(recipe.recipeId)
                     },
-                    onDeleteClick = { onDeleteClicked(recipe.recipeKey) },
-                    onEditClick = { navigateToEditRecipeScreen(recipe.recipeKey) },
-                    onShareClick = {},
-                    onFavoriteClicked = { onFavoriteClicked(recipe.recipeKey, recipe.favorite) }
+                    onDeleteClick = { onDeleteClicked(recipe.recipeId) },
+                    onEditClick = { navigateToEditRecipeScreen(recipe.recipeId) },
+                    onShareClick = { onShareClick(recipe) },
+                    onFavoriteClicked = { onFavoriteClicked(recipe.recipeId, recipe.favorite) }
                 )
             }
             item {
@@ -402,8 +411,7 @@ private fun EmptyMenuScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(innerPadding)
-            .padding(horizontal = commonHorizontalPadding),
+            .padding(innerPadding),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty_screen_book))

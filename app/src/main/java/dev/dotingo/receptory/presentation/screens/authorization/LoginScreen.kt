@@ -19,14 +19,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.AuthHeader
-import dev.dotingo.receptory.presentation.components.ClickableText
 import dev.dotingo.receptory.presentation.components.GoogleSignInButton
 import dev.dotingo.receptory.presentation.components.OrDivider
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
@@ -35,7 +33,6 @@ import dev.dotingo.receptory.presentation.components.ReceptoryPasswordInputField
 import dev.dotingo.receptory.presentation.components.SwitchAuthModeText
 import dev.dotingo.receptory.ui.icons.EmailIcon
 import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 
@@ -53,8 +50,7 @@ fun LoginScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .systemBarsPadding()
-            .padding(horizontal = commonHorizontalPadding),
+            .systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AuthHeader(
@@ -108,14 +104,6 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.error
         )
         Spacer(modifier = Modifier.height(bigPadding))
-        ClickableText(
-            text = stringResource(R.string.continue_without_login),
-            color = MaterialTheme.colorScheme.onBackground.copy(0.5f),
-            fontWeight = FontWeight.SemiBold
-        ) {
-            viewModel.signOut()
-            navigateToMainScreen()
-        }
         Spacer(modifier = Modifier.height(bigPadding))
         OrDivider()
         Spacer(modifier = Modifier.height(bigPadding))

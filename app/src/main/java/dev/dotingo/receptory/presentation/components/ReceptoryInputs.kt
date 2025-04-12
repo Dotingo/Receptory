@@ -30,7 +30,7 @@ fun ReceptoryInputField(
     modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
-    label: String = "",
+    label: String? = null,
     readOnly: Boolean = false,
     leadingIcon: ImageVector? = null,
     trailingIcon: ImageVector? = null,
@@ -58,7 +58,13 @@ fun ReceptoryInputField(
         trailingIcon = trailingIcon?.let {
             { Icon(imageVector = it, contentDescription = label) }
         },
-        label = { Text(text = label) }
+        label = if (label != null){
+            {
+                Text(text = label)
+            }
+        } else {
+            null
+        }
     )
 }
 

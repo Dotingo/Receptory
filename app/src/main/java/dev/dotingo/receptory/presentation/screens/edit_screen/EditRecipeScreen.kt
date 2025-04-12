@@ -136,14 +136,17 @@ fun EditRecipeScreen(
     }, bottomBar = {
         ReceptoryMainButton(
             modifier = Modifier
-                .padding(horizontal = commonHorizontalPadding)
                 .padding(top = smallPadding)
+                .padding(horizontal = commonHorizontalPadding)
                 .navigationBarsPadding(),
             text = if (key.isEmpty()) stringResource(R.string.add) else stringResource(R.string.edit),
             enabled = isButtonEnabled
         ) {
             if (uiState.title.isNotEmpty()) {
-                viewModel.saveRecipe(key, onSaved = navigateBack, onError = {})
+                viewModel.saveRecipe(key, onSaved = {
+                    navigateBack()
+                },
+                    onError = {})
             } else {
                 Toast.makeText(
                     context,
@@ -157,7 +160,6 @@ fun EditRecipeScreen(
             modifier = modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(horizontal = commonHorizontalPadding)
                 .verticalScroll(rememberScrollState())
                 .imePadding()
         ) {
@@ -285,9 +287,10 @@ fun EditRecipeScreen(
                     modifier = Modifier.weight(1f),
                     value = uiState.kcal,
                     onValueChange = { input ->
-                        viewModel.onFieldChange(
-                            EditRecipeField.KCAL,
-                            input.filter { it in "0123456789" })
+                        val filteredInput = input.filter { it in "0123456789" }
+                        if (filteredInput.length <= 5) {
+                            viewModel.onFieldChange(EditRecipeField.KCAL, filteredInput)
+                        }
                     },
                     label = stringResource(R.string.calories),
                     keyboardOptions = KeyboardOptions(

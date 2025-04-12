@@ -1,76 +1,42 @@
 package dev.dotingo.receptory.presentation.screens.main_screen
 
+import android.app.Application
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.dotingo.receptory.data.Recipe
+import dev.dotingo.receptory.FirebaseUploadWorker
+import dev.dotingo.receptory.R
+import dev.dotingo.receptory.R.string.recipe_description
 import dev.dotingo.receptory.data.local.database.dao.RecipeDao
 import dev.dotingo.receptory.data.local.database.entities.CategoryEntity
 import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
 import dev.dotingo.receptory.data.local.repository.CategoryRepository
+import dev.dotingo.receptory.utils.appendIfNotBlank
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
-
-fun Recipe.toEntity(): RecipeEntity {
-    return RecipeEntity(
-        recipeId = this.recipeKey,
-        userId = this.userId,
-        title = this.title,
-        description = this.description,
-        cookingSteps = this.cookingSteps,
-        category = this.category,
-        imageUrl = this.image,
-        favorite = this.favorite,
-        rating = this.rating,
-        cookingTime = this.cookingTime,
-        portions = this.portions,
-        kcal = this.kcal,
-        ingredients = this.ingredients,
-        websiteUrl = this.websiteUrl,
-        videoUrl = this.videoUrl,
-        creationTime = this.creationTime
-    )
-}
-
-fun RecipeEntity.toDomain(): Recipe {
-    return Recipe(
-        recipeKey = this.recipeId,
-        userId = this.userId,
-        title = this.title,
-        description = this.description,
-        cookingSteps = this.cookingSteps,
-        category = this.category,
-        image = this.imageUrl,
-        favorite = this.favorite,
-        rating = this.rating,
-        cookingTime = this.cookingTime,
-        portions = this.portions,
-        kcal = this.kcal,
-        ingredients = this.ingredients,
-        websiteUrl = this.websiteUrl,
-        videoUrl = this.videoUrl,
-        creationTime = this.creationTime
-    )
-}
 
 @HiltViewModel
 class MainScreenViewModel @Inject constructor(
-    private val firestore: FirebaseFirestore,
-    private val firebaseStorage: FirebaseStorage,
-    private val firebaseAuth: FirebaseAuth,
+    private val application: Application,
     private val recipeDao: RecipeDao,
     private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    private val _recipesList = MutableStateFlow<List<Recipe>>(emptyList())
-    val recipesList: StateFlow<List<Recipe>> = _recipesList.asStateFlow()
+    private val _recipesList = MutableStateFlow<List<RecipeEntity>>(emptyList())
+    val recipesList: StateFlow<List<RecipeEntity>> = _recipesList.asStateFlow()
 
     private val _categoriesList = MutableStateFlow<List<CategoryEntity>>(emptyList())
     val categoriesList: StateFlow<List<CategoryEntity>> = _categoriesList.asStateFlow()
@@ -115,109 +81,18 @@ class MainScreenViewModel @Inject constructor(
         _isCategoryFilterOpen.value = value
     }
 
-    //    fun changeLike(
-//        key: String,
-//        isLiked: Boolean
-//    ) {
-//        firestore.collection("recipes")
-//            .document(key)
-//            .update("favorite", !isLiked)
-//            .addOnSuccessListener {
-//                val updatedRecipes = _recipesList.value.map { recipe ->
-//                    if (recipe.recipeKey == key) recipe.copy(favorite = !isLiked) else recipe
-//                }
-//                _recipesList.value = updatedRecipes
-//                applyCurrentSorting()
-//            }
-//    }
-//
-//    fun fetchAllRecipes(
-//    ) {
-//        val userId = firebaseAuth.currentUser?.uid
-//        firestore.collection("recipes")
-//            .whereEqualTo("userId", userId).get()
-//            .addOnSuccessListener { result ->
-//                val recipes = result.toObjects(Recipe::class.java)
-//                _recipesList.value = result.toObjects(Recipe::class.java)
-//                applyCurrentSorting()
-//                viewModelScope.launch(Dispatchers.IO) {
-//                    recipes.forEach { recipe ->
-//                        recipeDao.insertRecipe(recipe.toEntity())
-//                    }
-//                }
-//            }
-//            .addOnFailureListener {
-//                Log.d("MyLog", "${it.message}")
-//            }
-//    }
-//
     fun fetchAllCategories() {
-        viewModelScope.launch(Dispatchers.IO){
-            categoryRepository.getAllCategories().collect{ list ->
+        viewModelScope.launch(Dispatchers.IO) {
+            categoryRepository.getAllCategories().collect { list ->
                 _categoriesList.value = list
             }
         }
     }
-//    fun fetchAllCategories(
-//    ) {
-//        val userId = firebaseAuth.currentUser?.uid
-//        firestore.collection("categories")
-//            .whereEqualTo("userId", userId).get()
-//            .addOnSuccessListener { result ->
-//                _categoriesList.value = result.toObjects(Category::class.java)
-//            }
-//            .addOnFailureListener {
-//                Log.d("MyLog", "${it.message}")
-//            }
-//    }
-//
-//    fun deleteRecipe(
-//        key: String
-//    ) {
-//        firestore.collection("recipes")
-//            .document(key)
-//            .get()
-//            .addOnSuccessListener { document ->
-//                if (document.exists()) {
-//                    val imageUrl = document.getString("imageUrl").orEmpty()
-//
-//                    firestore.collection("recipes")
-//                        .document(key)
-//                        .delete()
-//                        .addOnSuccessListener {
-//                            Log.d("Firestore", "Документ успешно удалён")
-//                            if (imageUrl.isNotEmpty()) {
-//                                val storageRef = firebaseStorage.getReferenceFromUrl(imageUrl)
-//                                storageRef.delete()
-//                                    .addOnSuccessListener {
-//                                        Log.d("FirebaseStorage", "Изображение успешно удалено")
-//                                    }
-//                                    .addOnFailureListener { e ->
-//                                        Log.e("FirebaseStorage", "Ошибка удаления изображения", e)
-//                                    }
-//                            }
-//                            fetchAllRecipes()
-//                            viewModelScope.launch {
-//                                recipeDao.deleteRecipe(key)
-//                            }
-//                        }
-//                        .addOnFailureListener { e ->
-//                            Log.e("Firestore", "Ошибка удаления документа", e)
-//                        }
-//                } else {
-//                    Log.e("Firestore", "Документ с ключом $key не найден")
-//                }
-//            }.addOnFailureListener { e ->
-//                Log.e("Firestore", "Ошибка получения документа для удаления", e)
-//            }
-//    }
 
-    fun fetchAllRecipes(
-    ) {
+    fun fetchAllRecipes() {
         viewModelScope.launch(Dispatchers.IO) {
             recipeDao.getAllRecipes().collect { recipeEntities ->
-                val recipes = recipeEntities.map { it.toDomain() }
-                _recipesList.value = recipes
+                _recipesList.value = recipeEntities
                 applyCurrentSorting()
             }
         }
@@ -227,6 +102,19 @@ class MainScreenViewModel @Inject constructor(
         key: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val firebaseUploadWorkRequest = OneTimeWorkRequestBuilder<FirebaseUploadWorker>()
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(application.applicationContext).enqueueUniqueWork(
+                "firebase_sync",
+                ExistingWorkPolicy.REPLACE,
+                firebaseUploadWorkRequest
+            )
             recipeDao.deleteRecipe(key)
         }
     }
@@ -276,6 +164,65 @@ class MainScreenViewModel @Inject constructor(
         } else {
             _recipesList.value.sortedBy { it.title }
         }
+    }
+
+    fun shareRecipe(
+        recipe: RecipeEntity,
+        context: Context,
+    ) {
+        val resources = context.resources
+
+        val titleLabel = resources.getString(R.string.name)
+        val descriptionLabel = resources.getString(recipe_description)
+        val categoryLabel = resources.getString(R.string.category)
+        val cookingTimeLabel = resources.getString(R.string.cooking_time)
+        val portionsLabel = resources.getString(R.string.portions)
+        val caloriesLabel = resources.getString(R.string.calories)
+        val ingredientsLabel = resources.getString(R.string.ingredients)
+        val stepsLabel = resources.getString(R.string.cooking_steps)
+
+        val recipeText = buildString {
+            appendIfNotBlank("$titleLabel: ", "\"${recipe.title}\"")
+            appendIfNotBlank("$descriptionLabel:\n", recipe.description)
+            appendIfNotBlank("$categoryLabel: ", recipe.category)
+            appendIfNotBlank("$cookingTimeLabel: ", recipe.cookingTime)
+            appendIfNotBlank("$portionsLabel: ", recipe.portions)
+            appendIfNotBlank("$caloriesLabel: ", recipe.kcal)
+
+            if (recipe.ingredients.isNotBlank()) {
+                append("\n🛒 $ingredientsLabel:\n")
+                recipe.ingredients.lines()
+                    .filter { it.isNotBlank() }
+                    .forEach { append("- $it\n") }
+            }
+
+            if (recipe.cookingSteps.isNotBlank()) {
+                append("\n👨‍🍳 $stepsLabel:\n")
+                recipe.cookingSteps.lines()
+                    .filter { it.isNotBlank() }
+                    .forEachIndexed { index, step -> append("${index + 1}. $step\n") }
+            }
+        }
+
+        val imagePath = if (recipe.imageUrl != "") File(recipe.imageUrl) else null
+
+        val imageUri = imagePath?.let {
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                it
+            )
+        }
+
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, recipeText)
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/jpg", "image/png"))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Share recipe"))
     }
 }
 

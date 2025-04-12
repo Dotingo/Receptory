@@ -1,5 +1,6 @@
 package dev.dotingo.receptory.presentation.screens.timer_screen
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,8 +47,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
@@ -70,20 +71,19 @@ import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.timerControlsButtonSize
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.utils.clickVibration
-import dev.dotingo.receptory.utils.repeatVibration
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimerScreen(
     modifier: Modifier = Modifier,
-    timerViewModel: TimerViewModel = viewModel(),
+    timerViewModel: TimerViewModel = hiltViewModel(),
     navigateBack: () -> Unit
 ) {
-
     val showTimer by timerViewModel.showTimer.collectAsStateWithLifecycle()
     val timerText by timerViewModel.timerText.collectAsStateWithLifecycle()
-
+    val isPlaying by timerViewModel.isPlaying.collectAsStateWithLifecycle()
+    val isFinished by timerViewModel.isTimerFinished.collectAsStateWithLifecycle()
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -91,7 +91,8 @@ fun TimerScreen(
                 navigationIcon = {
                     CircleIcon(
                         imageVector = BackArrowIcon,
-                        contentDescription = "Назад",
+                        modifier = Modifier.padding(start = smallPadding),
+                        contentDescription = stringResource(R.string.go_back),
                         onClick = navigateBack
                     )
                 }
@@ -111,7 +112,20 @@ fun TimerScreen(
                 Spacer(Modifier.weight(1f))
 
                 TimerControls(
-                    timerViewModel = timerViewModel,
+                    isPlaying = isPlaying,
+                    isFinished = isFinished,
+                    addMinuteClick = {
+                        timerViewModel.addMinute()
+                    },
+                    stopCountDownTimer = {
+                        timerViewModel.stopCountDownTimer()
+                    },
+                    resetCountDownTimer = {
+                        timerViewModel.resetCountDownTimer()
+                    },
+                    startCountDownTimer = {
+                        timerViewModel.startCountDownTimer()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = extraBigPadding)
@@ -125,7 +139,6 @@ fun TimerScreen(
                 )
                 ReceptoryMainButton(
                     modifier = Modifier
-                        .padding(horizontal = commonHorizontalPadding)
                         .padding(top = smallPadding)
                         .navigationBarsPadding(),
                     text = stringResource(R.string.add_timer),
@@ -181,7 +194,7 @@ fun TimerInput(modifier: Modifier = Modifier, viewModel: TimerViewModel) {
     }
 }
 
-fun formatTime(input: String, viewModel: TimerViewModel): AnnotatedString {
+private fun formatTime(input: String, viewModel: TimerViewModel): AnnotatedString {
     val digits = input.padStart(6, '0')
     val hours = digits.take(digits.length - 4).toIntOrNull() ?: 0
     val minutes = digits.takeLast(4).take(2).toIntOrNull() ?: 0
@@ -202,7 +215,7 @@ fun formatTime(input: String, viewModel: TimerViewModel): AnnotatedString {
 }
 
 @Composable
-fun Keyboard(modifier: Modifier = Modifier, onKeyPress: (String) -> Unit) {
+private fun Keyboard(modifier: Modifier = Modifier, onKeyPress: (String) -> Unit) {
     val keys = listOf(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
@@ -228,7 +241,7 @@ fun Keyboard(modifier: Modifier = Modifier, onKeyPress: (String) -> Unit) {
 }
 
 @Composable
-fun KeyButton(key: String, onClick: () -> Unit) {
+private fun KeyButton(key: String, onClick: () -> Unit) {
     val context = LocalContext.current
     Button(
         onClick = {
@@ -265,21 +278,13 @@ fun TimerCard(
     val progress by timerViewModel.circleProgress.collectAsStateWithLifecycle()
     val timerText by timerViewModel.timerText.collectAsStateWithLifecycle()
     val isTimerFinished by timerViewModel.isTimerFinished.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
 
     LaunchedEffect(isTimerFinished) {
         if (isTimerFinished) {
+            Log.d("TimerCard", "LaunchedEffect triggered: isTimerFinished = true. Calling playAlarmSound.")
             timerViewModel.playAlarmSound()
         } else {
             timerViewModel.stopAlarmSound()
-        }
-    }
-
-    if (isTimerFinished) {
-        @Suppress("KotlinConstantConditions")
-        LaunchedEffect(isTimerFinished) {
-            repeatVibration(context, isTimerFinished)
         }
     }
 
@@ -307,8 +312,8 @@ fun TimerCard(
                 backgroundColor = MaterialTheme.colorScheme.secondary,
                 iconColor = MaterialTheme.colorScheme.onSecondary
             ) {
-                timerViewModel.stopAlarmSound()
-                timerViewModel.setShowTimer(false)
+                timerViewModel.hideTimerAndCleanup()
+//                timerViewModel.setShowTimer(false)
             }
             Box(
                 modifier = circleModifier
@@ -362,19 +367,23 @@ fun TimerCard(
 
 @Composable
 fun TimerControls(
-    timerViewModel: TimerViewModel,
+    isPlaying: Boolean,
+    isFinished: Boolean,
+    addMinuteClick: () -> Unit,
+    stopCountDownTimer: () -> Unit,
+    startCountDownTimer: () -> Unit,
+    resetCountDownTimer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isPlaying by timerViewModel.isPlaying.collectAsStateWithLifecycle()
-    val isFinished by timerViewModel.isTimerFinished.collectAsStateWithLifecycle()
-
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.Center
     ) {
         if (!isFinished) {
             Button(
-                onClick = { timerViewModel.addMinute() },
+                onClick = {
+                    addMinuteClick()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer
                 ),
@@ -392,11 +401,11 @@ fun TimerControls(
         Button(
             onClick = {
                 if (isPlaying) {
-                    timerViewModel.stopCountDownTimer()
+                    stopCountDownTimer()
                 } else if (isFinished) {
-                    timerViewModel.resetCountDownTimer()
+                    resetCountDownTimer()
                 } else {
-                    timerViewModel.startCountDownTimer()
+                    startCountDownTimer()
                 }
             },
             colors = ButtonDefaults.buttonColors(

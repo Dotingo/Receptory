@@ -17,6 +17,9 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipe(recipe: RecipeEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllRecipes(recipes: List<RecipeEntity>)
+
     // Обновление рецепта
     @Update
     suspend fun updateRecipe(recipe: RecipeEntity)
@@ -24,6 +27,9 @@ interface RecipeDao {
     // Удаление рецепта
     @Query("DELETE FROM recipes WHERE recipeId = :recipeKey")
     suspend fun deleteRecipe(recipeKey: String)
+
+    @Query("DELETE FROM recipes")
+    suspend fun deleteAllRecipes()
 
     // Получение отдельного рецепта по ключу
     @Query("SELECT * FROM recipes WHERE recipeId = :recipeKey LIMIT 1")

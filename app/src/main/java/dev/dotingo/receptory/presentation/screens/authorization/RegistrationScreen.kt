@@ -26,18 +26,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.AuthHeader
-import dev.dotingo.receptory.presentation.components.ClickableText
 import dev.dotingo.receptory.presentation.components.GoogleSignInButton
 import dev.dotingo.receptory.presentation.components.OrDivider
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
@@ -46,7 +44,6 @@ import dev.dotingo.receptory.presentation.components.ReceptoryPasswordInputField
 import dev.dotingo.receptory.presentation.components.SwitchAuthModeText
 import dev.dotingo.receptory.ui.icons.EmailIcon
 import dev.dotingo.receptory.ui.theme.Dimens.bigPadding
-import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
 
 @Composable
@@ -58,19 +55,26 @@ fun RegistrationScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val verificationDialog by viewModel.verificationDialog.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .systemBarsPadding()
-            .padding(horizontal = commonHorizontalPadding),
+            .systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (verificationDialog) {
             VerificationDialog(
-                navigateToMainScreen = navigateToMainScreen,
-                viewModel = viewModel
+                email = state.email,
+                closeDialogClick = { viewModel.closeVerificationDialog() },
+                monitorEmailVerification = {
+                    viewModel.monitorEmailVerification {
+                        Toast.makeText(context, context.getString(R.string.email_confirmed), Toast.LENGTH_SHORT).show()
+                        navigateToMainScreen()
+                    }
+                }
             )
         }
 
@@ -125,15 +129,6 @@ fun RegistrationScreen(
         )
 
         Spacer(modifier = Modifier.height(bigPadding))
-        ClickableText(
-            modifier = Modifier.alpha(0.5f),
-            text = stringResource(R.string.continue_without_reg),
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.SemiBold
-        ) {
-            viewModel.signOut()
-            navigateToMainScreen()
-        }
         Spacer(modifier = Modifier.height(bigPadding))
         OrDivider()
         Spacer(modifier = Modifier.height(bigPadding))
@@ -149,14 +144,11 @@ fun RegistrationScreen(
 @Composable
 fun VerificationDialog(
     modifier: Modifier = Modifier,
-    navigateToMainScreen: () -> Unit,
-    viewModel: AuthorizationViewModel
+    email: String,
+    closeDialogClick: () -> Unit,
+    monitorEmailVerification: () -> Unit
 ) {
-    val context = LocalContext.current
-    viewModel.monitorEmailVerification {
-        Toast.makeText(context, context.getString(R.string.email_confirmed), Toast.LENGTH_SHORT).show()
-        navigateToMainScreen()
-    }
+    monitorEmailVerification()
     BasicAlertDialog(
         modifier = modifier,
         onDismissRequest = {}
@@ -170,13 +162,22 @@ fun VerificationDialog(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = stringResource(R.string.waiting_email_confirmation),
+                    text = "Подтвердите ваш email",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(R.string.waiting_email_confirmation, email),
+                    textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(modifier = Modifier.height(24.dp))
                 TextButton(
-                    onClick = { viewModel.closeVerificationDialog() },
+                    onClick = closeDialogClick,
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Text(stringResource(R.string.cancel))

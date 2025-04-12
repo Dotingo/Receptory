@@ -25,6 +25,10 @@ android {
         }
     }
 
+    androidResources{
+        generateLocaleConfig = true
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -52,6 +56,12 @@ android {
 }
 
 dependencies {
+
+    implementation (libs.androidx.work.runtime.ktx)
+    implementation (libs.androidx.hilt.work)
+    implementation (libs.kotlinx.coroutines.play.services)
+
+    implementation("androidx.lifecycle:lifecycle-service:2.8.7")
 
     implementation (libs.androidx.core.splashscreen)
 

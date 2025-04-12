@@ -95,14 +95,6 @@ fun ReceptoryTheme(
 ) {
 
     val colorScheme = when (appTheme) {
-        ThemeValues.SYSTEM_DEFAULT.title -> {
-            if (darkTheme) {
-                darkColorScheme
-            } else {
-                lightColorScheme
-            }
-        }
-
         ThemeValues.LIGHT_MODE.title -> {
             lightColorScheme
         }

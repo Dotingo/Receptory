@@ -50,18 +50,14 @@ fun CategoryEditDialog(
     userId: String,
     label: String
 ) {
-    // Получаем состояние из ViewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var expanded by remember { mutableStateOf(false) }
-
-    // Преобразуем строку выбранных категорий в список
     val selectedCategories = uiState.selectedCategories
         .split(",")
         .map { it.trim() }
         .filter { it.isNotEmpty() }
         .toMutableStateList()
 
-    // Текстовое поле для отображения выбранных категорий
     var selectedItemsText by remember { mutableStateOf(uiState.selectedCategories) }
 
     val categoriesListState by viewModel.categories.collectAsStateWithLifecycle()
@@ -133,12 +129,9 @@ fun CategoryEditDialog(
                                 it.name.contains(searchQuery, ignoreCase = true)
                             }
                             items(filteredCategories) { item ->
-                                // Проверяем, выбрана ли категория, используя логику из ViewModel
                                 val isSelected = selectedCategories.contains(item.name)
                                 CheckboxRow(text = item.name, checked = isSelected) {
-                                    // Переключаем состояние выбранной категории через ViewModel
                                     viewModel.toggleCategory(item.name)
-                                    // Обновляем локальный список для отображения (UI обновится при новом состоянии)
                                     if (isSelected) {
                                         selectedCategories.remove(item.name)
                                     } else {
@@ -164,49 +157,3 @@ fun CategoryEditDialog(
         }
     }
 }
-
-//
-//private fun loadCategories(
-//    firestore: FirebaseFirestore,
-//    userId: String,
-//    onCategories: (List<Category>) -> Unit
-//) {
-//    firestore.collection("categories")
-//        .whereEqualTo("userId", userId).get()
-//        .addOnSuccessListener { result ->
-//            onCategories(result.toObjects(Category::class.java))
-//        }
-//        .addOnFailureListener {
-//            Log.d("MyLog", "${it.message}")
-//        }
-//}
-//
-//private fun saveCategoryToFirestore(
-//    firestore: FirebaseFirestore,
-//    category: Category,
-//    onSaved: () -> Unit,
-//    onError: () -> Unit
-//) {
-//    firestore.collection("categories")
-//        .whereEqualTo("userId", category.userId)
-//        .whereEqualTo("name", category.name)
-//        .get()
-//        .addOnSuccessListener { result ->
-//            if (result.isEmpty) {
-//                val db = firestore.collection("categories")
-//                val key = db.document().id
-//                db.document(key)
-//                    .set(category)
-//                    .addOnSuccessListener {
-//                        onSaved()
-//                    }.addOnFailureListener {
-//                        Log.d("MyLog", it.message.toString())
-//                        onError()
-//                    }
-//            }
-//        }
-//        .addOnFailureListener {
-//            Log.d("MyLog", it.message.toString())
-//            onError()
-//        }
-//}

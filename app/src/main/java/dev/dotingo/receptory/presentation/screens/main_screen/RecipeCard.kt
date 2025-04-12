@@ -142,8 +142,8 @@ fun RecipeCard(
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                 ) {
                     Icon(
-                        PlaceholderIcon,
-                        "",
+                        imageVector = PlaceholderIcon,
+                        contentDescription = stringResource(R.string.recipe_image),
                         modifier = Modifier
                             .align(Alignment.Center)
                             .fillMaxSize(),
@@ -166,7 +166,8 @@ fun RecipeCard(
                         maxLines = 1,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(modifier = Modifier.size(mediumIconSize),
+                    IconButton(
+                        modifier = Modifier.size(mediumIconSize),
                         onClick = {
                             onFavoriteClicked()
                         }
@@ -194,32 +195,34 @@ fun RecipeCard(
                         }
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (kcal.isNotEmpty()) {
-                        Icon(
-                            imageVector = KcalIcon,
-                            contentDescription = stringResource(R.string.kcal),
-                            modifier = Modifier.size(extraSmallIconSize)
-                        )
-                        Spacer(modifier = Modifier.width(tinyPadding))
-                        Text(
-                            stringResource(R.string.kcal, kcal),
-                            style = MaterialTheme.typography.bodySmall,
-                            overflow = TextOverflow.Ellipsis,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .padding(end = smallPadding)
-                                .weight(1f)
-                        )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween, // Распределяет пространство
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (kcal.isNotEmpty()) {
+                            Icon(
+                                imageVector = KcalIcon,
+                                contentDescription = stringResource(R.string.kcal),
+                                modifier = Modifier.size(extraSmallIconSize)
+                            )
+                            Spacer(modifier = Modifier.width(tinyPadding))
+                            Text(
+                                stringResource(R.string.kcal, kcal),
+                                style = MaterialTheme.typography.bodySmall,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(20.dp))
                     if (category.isNotEmpty()) {
                         Text(
                             category,
                             style = MaterialTheme.typography.bodySmall,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
-
                         )
                     }
                 }

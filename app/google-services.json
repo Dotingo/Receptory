@@ -12,7 +12,20 @@
           "package_name": "dev.dotingo.receptory"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1050974034866-aakiffltflrmefrv065h3lfkoe7rqrmn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dev.dotingo.receptory",
+            "certificate_hash": "a3bb15b673b84f2008963b790a5e199e2223a33a"
+          }
+        },
+        {
+          "client_id": "1050974034866-tiobvhn2rruisljis6udockfmb1j26p3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyABkzcTnalMF-QrNAVz7auLJE4MsKhHKgY"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1050974034866-tiobvhn2rruisljis6udockfmb1j26p3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

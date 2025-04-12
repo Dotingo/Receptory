@@ -1,25 +1,44 @@
 package dev.dotingo.receptory.presentation.screens.authorization
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.nulabinc.zxcvbn.Zxcvbn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.dotingo.receptory.data.local.database.dao.CategoryDao
+import dev.dotingo.receptory.data.local.database.dao.RecipeDao
+import dev.dotingo.receptory.data.local.database.entities.CategoryEntity
+import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
 import dev.dotingo.receptory.data.local.datastore.DataStoreManager
 import dev.dotingo.receptory.di.ReceptoryApp
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthorizationViewModel @Inject constructor(
     private val application: ReceptoryApp,
     private val dataStoreManager: DataStoreManager,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val recipeDao: RecipeDao,
+    private val categoryDao: CategoryDao,
+    private val firebaseFirestore: FirebaseFirestore
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
@@ -48,10 +67,7 @@ class AuthorizationViewModel @Inject constructor(
         )
     }
 
-    fun signOut() {
-        auth.signOut()
-    }
-
+    @OptIn(DelicateCoroutinesApi::class)
     fun signIn(onSuccessful: () -> Unit) {
         val state = _uiState.value
         if (state.email.isBlank() || state.password.isBlank()) {
@@ -68,6 +84,56 @@ class AuthorizationViewModel @Inject constructor(
                         viewModelScope.launch {
                             dataStoreManager.setUserLoggedIn(true)
                         }
+                        val userId = auth.currentUser?.uid
+                        Log.d("FirebaseDebug", "User ID: $userId")
+                        viewModelScope.launch(SupervisorJob() + Dispatchers.IO){
+                            try {
+                                Log.d("FirebaseDebug", "Fetching recipes...")
+                                val recipesSnapshot = firebaseFirestore.collection("recipes")
+                                    .whereEqualTo("userId", userId)
+                                    .get()
+                                    .await()
+
+                                Log.d("FirebaseDebug", "Recipes fetched: ${recipesSnapshot.documents.size}")
+
+                                val recipes = recipesSnapshot.toObjects(RecipeEntity::class.java)
+
+                                val categoriesSnapshot = firebaseFirestore.collection("categories")
+                                    .whereEqualTo("userId", userId)
+                                    .get()
+                                    .await()
+
+                                Log.d("FirebaseDebug", "Categories fetched: ${categoriesSnapshot.documents.size}")
+
+                                val categories = categoriesSnapshot.toObjects(CategoryEntity::class.java)
+
+                                // Обновляем рецепты: скачиваем изображение и сохраняем локально
+                                val updatedRecipes = recipes.map { recipe ->
+                                    // Предполагаем, что если ссылка начинается с "https://", это ссылка на Firebase Storage
+                                    if (recipe.imageUrl.isNotEmpty() && recipe.imageUrl.startsWith("https://")) {
+                                        Log.d("FirebaseDebug", "Downloading image: ${recipe.imageUrl}")
+                                        val localFileName = "${recipe.recipeId}.jpg"
+                                        val localPath = downloadImageAndSaveLocally(recipe.imageUrl, localFileName)
+                                        if (localPath != null) {
+                                            Log.d("FirebaseDebug", "Image saved locally: $localPath")
+                                            recipe.copy(imageUrl = localPath)
+                                        } else {
+                                            Log.d("FirebaseDebug", "Image download failed: ${recipe.imageUrl}")
+                                            recipe // Если не удалось скачать, оставляем оригинальный путь
+                                        }
+                                    } else {
+                                        recipe
+                                    }
+                                }
+                                Log.d("FirebaseDebug", "Inserting recipes into DB...")
+                                recipeDao.insertAllRecipes(updatedRecipes)
+                                categoryDao.insertAllCategories(categories)
+                                Log.d("FirebaseDebug", "Data inserted successfully.")
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                Log.e("FirebaseDebug", "Error: ${e.localizedMessage}")
+                            }
+                        }
                         onSuccessful()
                     } else {
                         _uiState.value = state.copy(
@@ -75,12 +141,39 @@ class AuthorizationViewModel @Inject constructor(
                         )
                     }
                 }
-            }.addOnFailureListener {
+            }
+            .addOnFailureListener {
                 _uiState.value = state.copy(
                     isLoading = false,
                     authErrorMessage = it.localizedMessage ?: "Ошибка входа"
                 )
             }
+    }
+
+    private suspend fun downloadImageAndSaveLocally(imageUrl: String, fileName: String): String? = withContext(
+        Dispatchers.IO) {
+        try {
+            val url = URL(imageUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.doInput = true
+            connection.connect()
+            val inputStream = connection.inputStream
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            val imageFile = File(application.filesDir, fileName)
+            val outputStream = FileOutputStream(imageFile)
+            // Можно настроить качество по необходимости
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+
+            imageFile.absolutePath
+        } catch (e: Exception) {
+            Log.d("downloadImageAndSaveLocally", "${e.localizedMessage}")
+            e.printStackTrace()
+            null
+        }
     }
 
     fun signUp() {
@@ -125,11 +218,11 @@ class AuthorizationViewModel @Inject constructor(
     }
 
     private fun validatePassword(password: String): String {
-        val regex = Regex("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@\$!%*?&]{8,}\$")
+        val regex = Regex("^(?=.*[A-Za-z])(?=.*\\d).{6,}\$")
         val zxcvbn = Zxcvbn()
         return when {
             password.isEmpty() -> "Пароль не должен быть пуст"
-            password.length < 8 -> "Пароль должен содержать не менее 8 символов"
+            password.length < 6 -> "Пароль должен содержать не менее 6 символов"
             !regex.matches(password) -> "Пароль должен содержать цифры и латинские буквы"
             zxcvbn.measure(password).score < 2 -> "Пароль слишком простой"
             else -> ""

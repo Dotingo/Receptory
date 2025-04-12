@@ -27,7 +27,7 @@ class DataStoreManager @Inject constructor (private val context: Context) {
     fun isFirstLaunchFlow(): Flow<Boolean> {
         return context.dataStore.data
             .map { preferences ->
-                preferences[IS_FIRST_LAUNCH_KEY] ?: true
+                preferences[IS_FIRST_LAUNCH_KEY] != false
             }
     }
 
@@ -40,10 +40,9 @@ class DataStoreManager @Inject constructor (private val context: Context) {
     fun isUserLoggedIn(): Flow<Boolean> {
         return context.dataStore.data
             .map { preferences ->
-                preferences[IS_USER_LOGGED_IN_KEY] ?: false
+                preferences[IS_USER_LOGGED_IN_KEY] == true
             }
     }
-
 
     suspend fun putThemeStrings(key: String, value: String) {
         val preferencesKey = stringPreferencesKey(key)
@@ -60,13 +59,13 @@ class DataStoreManager @Inject constructor (private val context: Context) {
         }
     }
 
+
     companion object {
         private val IS_FIRST_LAUNCH_KEY = booleanPreferencesKey("is_first_launch")
         private val IS_USER_LOGGED_IN_KEY = booleanPreferencesKey("is_user_logged_in")
-        private val THEME_KEY = stringPreferencesKey("theme_key")
     }
 
-    private val Context.themeDataStore: androidx.datastore.core.DataStore<Preferences> by preferencesDataStore(
+    private val Context.themeDataStore: DataStore<Preferences> by preferencesDataStore(
         name = "THEME_KEYS"
     )
 

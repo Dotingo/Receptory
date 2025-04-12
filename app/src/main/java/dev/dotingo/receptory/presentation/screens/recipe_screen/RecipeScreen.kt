@@ -2,7 +2,6 @@ package dev.dotingo.receptory.presentation.screens.recipe_screen
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -33,6 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -53,8 +54,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import dev.dotingo.receptory.R
@@ -82,19 +83,17 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeScreen(
-    modifier: Modifier = Modifier,
     key: String,
     navigateBack: () -> Unit,
     navigateToShoppingListMenuScreen: () -> Unit,
     navigateToEditRecipeScreen: (String) -> Unit,
+    navigateToTimerScreen: () -> Unit,
     viewModel: RecipeScreenViewModel = hiltViewModel()
 ) {
     val listState = rememberLazyListState()
     val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
-    var showTimer by remember { mutableStateOf(false) }
-
     val recipeState = viewModel.recipe
-
+    val context = LocalContext.current
     LaunchedEffect(key) {
         viewModel.fetchRecipe(key)
     }
@@ -111,7 +110,7 @@ fun RecipeScreen(
                     CircleIcon(
                         modifier = Modifier.padding(start = smallPadding),
                         imageVector = BackArrowIcon,
-                        contentDescription = "Назад"
+                        contentDescription = stringResource(R.string.go_back)
                     ) {
                         navigateBack()
                     }
@@ -119,7 +118,7 @@ fun RecipeScreen(
                 actions = {
                     CircleIcon(
                         imageVector = if (recipeState.favorite) FavoriteBoldIcon else FavoriteOutlinedIcon,
-                        contentDescription = "Нравится",
+                        contentDescription = stringResource(R.string.like),
                         iconSize = mediumIconSize
                     ) {
                         viewModel.toggleFavorite()
@@ -127,15 +126,15 @@ fun RecipeScreen(
                     Spacer(Modifier.width(extraSmallPadding))
                     CircleIcon(
                         imageVector = ShareIcon,
-                        contentDescription = "Поделиться"
+                        contentDescription = stringResource(R.string.share)
                     ) {
-
+                        viewModel.shareRecipe(recipeState, context)
                     }
                     Spacer(Modifier.width(extraSmallPadding))
                     CircleIcon(
                         modifier = Modifier.padding(end = smallPadding),
                         imageVector = EditIcon,
-                        contentDescription = "Редактировать"
+                        contentDescription = stringResource(R.string.share)
                     ) {
                         navigateToEditRecipeScreen(key)
                     }
@@ -144,7 +143,7 @@ fun RecipeScreen(
         }
     ) {
         LazyColumn(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .navigationBarsPadding(),
             state = listState,
@@ -152,7 +151,7 @@ fun RecipeScreen(
         ) {
             item {
                 RecipeHeader(
-                    image = recipeState.image,
+                    image = recipeState.imageUrl,
                     title = recipeState.title,
                     category = recipeState.category,
                     rating = recipeState.rating
@@ -171,7 +170,13 @@ fun RecipeScreen(
 
             item {
                 IngredientsSection(
-                    ingredients = recipeState.ingredients
+                    ingredients = recipeState.ingredients,
+                    onCreateShoppingListClick = {
+                        viewModel.createShoppingListWithItems(
+                            context.getString(R.string.shopping_list_for, recipeState.title),
+                            it
+                        )
+                    }
                 ) {
                     navigateToShoppingListMenuScreen()
                 }
@@ -180,7 +185,7 @@ fun RecipeScreen(
             item {
                 CookingStepsSection(
                     cookingSteps = recipeState.cookingSteps,
-                    onShowTimerChange = { showTimer = it }
+                    navigateToTimerScreen = navigateToTimerScreen
                 )
             }
 
@@ -279,7 +284,7 @@ private fun RecipeHeader(image: String, title: String, category: String, rating:
                 repeat(rating) {
                     Icon(
                         StarIcon,
-                        "Рейтинг",
+                        stringResource(R.string.rating),
                         modifier = Modifier.size(mediumIconSize),
                         tint = starColor
                     )
@@ -294,10 +299,7 @@ private fun RecipeHeader(image: String, title: String, category: String, rating:
 private fun RecipeDescription(description: String) {
     if (description.isNotEmpty()) {
         Spacer(Modifier.padding(top = smallPadding))
-        Column(
-            modifier = Modifier
-                .padding(horizontal = commonHorizontalPadding)
-        ) {
+        Column(modifier = Modifier.padding(horizontal = commonHorizontalPadding)) {
             Text(
                 stringResource(R.string.recipe_description),
                 style = MaterialTheme.typography.headlineSmall,
@@ -326,10 +328,7 @@ private fun RecipeInfo(cookingTime: String, portions: String, kcal: String) {
             stringResource(R.string.portions) to portions,
             stringResource(R.string.calories) to kcal
         )
-        Column(
-            modifier = Modifier
-                .padding(horizontal = commonHorizontalPadding)
-        ) {
+        Column(modifier = Modifier.padding(horizontal = commonHorizontalPadding)) {
             Text(
                 stringResource(R.string.general_information),
                 style = MaterialTheme.typography.headlineSmall,
@@ -356,12 +355,25 @@ private fun RecipeInfo(cookingTime: String, portions: String, kcal: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun IngredientsSection(ingredients: String, navigateToShoppingListMenuScreen: () -> Unit) {
+private fun IngredientsSection(
+    ingredients: String,
+    onCreateShoppingListClick: (List<String>) -> Unit,
+    navigateToShoppingListMenuScreen: () -> Unit
+) {
+    val shoppingList = remember { mutableStateListOf<String>() }
+    val ingredientSelection = remember { mutableStateMapOf<String, Boolean>() }
+
+    LaunchedEffect(ingredients) {
+        shoppingList.clear()
+        ingredientSelection.clear()
+        ingredients.lines().filter { it.isNotBlank() }.forEach { ingredient ->
+            shoppingList.add(ingredient)
+            ingredientSelection[ingredient] = false // По умолчанию все в списке
+        }
+    }
+
     if (ingredients.isNotEmpty()) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = commonHorizontalPadding)
-        ) {
+        Column(modifier = Modifier.padding(horizontal = commonHorizontalPadding)) {
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
@@ -376,12 +388,14 @@ private fun IngredientsSection(ingredients: String, navigateToShoppingListMenuSc
                     backgroundColor = MaterialTheme.colorScheme.primary,
                     iconColor = MaterialTheme.colorScheme.onPrimary
                 ) {
+                    onCreateShoppingListClick(shoppingList)
                     navigateToShoppingListMenuScreen()
                 }
             }
             Spacer(Modifier.height(smallPadding))
             ingredients.lines().forEach { ingredient ->
-                var isSelected by rememberSaveable { mutableStateOf(false) }
+                val isSelected = ingredientSelection[ingredient] == true
+
                 Text(
                     ingredient,
                     style = MaterialTheme.typography.bodyLarge,
@@ -391,12 +405,18 @@ private fun IngredientsSection(ingredients: String, navigateToShoppingListMenuSc
                         MaterialTheme.colorScheme.onBackground
                     },
                     modifier = Modifier.clickable {
-                        isSelected = !isSelected
+                        val newSelected = !isSelected
+                        ingredientSelection[ingredient] = newSelected
+                        if (newSelected) {
+                            shoppingList.remove(ingredient)
+                        } else {
+                            shoppingList.add(ingredient)
+                        }
                     }
                 )
             }
             Text(
-                text = "*Вы можете помечать ингредиенты нажимая на них",
+                text = stringResource(R.string.ingredient_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = mediumPadding)
@@ -413,13 +433,10 @@ private fun IngredientsSection(ingredients: String, navigateToShoppingListMenuSc
 @Composable
 private fun CookingStepsSection(
     cookingSteps: String,
-    onShowTimerChange: (Boolean) -> Unit
+    navigateToTimerScreen: () -> Unit
 ) {
     if (cookingSteps.isNotEmpty()) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = commonHorizontalPadding)
-        ) {
+        Column(modifier = Modifier.padding(horizontal = commonHorizontalPadding)) {
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
@@ -434,18 +451,19 @@ private fun CookingStepsSection(
                     backgroundColor = MaterialTheme.colorScheme.primary,
                     iconColor = MaterialTheme.colorScheme.onPrimary
                 ) {
-                    onShowTimerChange(true)
+                    navigateToTimerScreen()
                 }
             }
             Spacer(Modifier.height(smallPadding))
 
             cookingSteps.lines().forEachIndexed { index, step ->
                 var isSelected by rememberSaveable { mutableStateOf(false) }
-                Column(modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        isSelected = !isSelected
-                    }) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            isSelected = !isSelected
+                        }) {
                     Text(
                         stringResource(R.string.stage, index + 1),
                         style = MaterialTheme.typography.bodyLarge,
@@ -465,12 +483,12 @@ private fun CookingStepsSection(
                             MaterialTheme.colorScheme.onBackground
                         },
                         modifier = Modifier
-                            .padding(bottom = 5.dp)
+                            .padding(extraSmallPadding)
                     )
                 }
             }
             Text(
-                text = "*Вы можете помечать этапы нажимая на них",
+                text = stringResource(R.string.cook_steps_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = mediumPadding)
@@ -488,11 +506,8 @@ private fun CookingStepsSection(
 private fun LinkSection(title: String, url: String) {
     if (url.isNotEmpty()) {
         val context = LocalContext.current
-        val intent = remember { Intent(Intent.ACTION_VIEW, Uri.parse(url)) }
-        Column(
-            modifier = Modifier
-                .padding(horizontal = commonHorizontalPadding)
-        ) {
+        val intent = remember { Intent(Intent.ACTION_VIEW, url.toUri()) }
+        Column(modifier = Modifier.padding(horizontal = commonHorizontalPadding)) {
             Text(
                 title,
                 style = MaterialTheme.typography.headlineSmall,
@@ -525,21 +540,4 @@ private fun LinkSection(title: String, url: String) {
             )
         }
     }
-
 }
-
-//private fun getRecipe(
-//    db: FirebaseFirestore,
-//    key: String,
-//    onRecipe: (Recipe?) -> Unit
-//) {
-//    db.collection("recipes")
-//        .document(key)
-//        .get()
-//        .addOnSuccessListener { result ->
-//            onRecipe(result.toObject(Recipe::class.java))
-//        }
-//        .addOnFailureListener {
-//            onRecipe(null)
-//        }
-//}

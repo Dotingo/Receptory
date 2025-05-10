@@ -1,39 +1,48 @@
 [versions]
-agp = "8.9.1"
+agp = "8.10.0"
 coilCompose = "3.0.4"
-firebaseBom = "33.9.0"
+credentials = "1.5.0"
+credentialsPlayServicesAuth = "1.5.0"
+firebaseBom = "33.12.0"
+googleid = "1.1.1"
 hiltAndroid = "2.53.1"
 hilt = "2.53.1"
 hiltAndroidCompiler = "2.53.1"
 hiltCompiler = "1.2.0"
 kotlin = "2.1.0"
-coreKtx = "1.15.0"
+coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 kotlinxCoroutinesPlayServices = "1.9.0"
 lifecycleRuntimeKtx = "2.8.7"
-activityCompose = "1.10.0"
-composeBom = "2025.02.00"
+activityCompose = "1.10.1"
+composeBom = "2025.04.00"
+lifecycleService = "2.8.7"
 lifecycleViewmodelKtx = "2.8.7"
 lottieCompose = "6.5.2"
-navigationCompose = "2.8.7"
+navigationCompose = "2.8.9"
+playServicesAuth = "21.3.0"
 uiTextGoogleFonts = "1.7.8"
 serialization = "1.7.3"
 workRuntimeKtx = "2.10.0"
 zxcvbn = "1.9.0"
 ksp = "2.1.0-1.0.29"
 gmsVersion = "4.4.2"
-datastore-preferences = "1.1.2"
+datastore-preferences = "1.1.4"
 core-splashscreen = "1.0.1"
-room-compiler = "2.6.1"
-room-ktx = "2.6.1"
+room-compiler = "2.7.0"
+room-ktx = "2.7.0"
 
 
 [libraries]
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltCompiler" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltCompiler" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltCompiler" }
+androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycleService" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltAndroidCompiler" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
@@ -82,6 +91,7 @@ androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text
 
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
 
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 zxcvbn = { module = "com.nulab-inc:zxcvbn", version.ref = "zxcvbn" }
 
 [plugins]

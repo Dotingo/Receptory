@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.data.local.database.entities.ShoppingItemEntity
+import dev.dotingo.receptory.data.database.entities.ShoppingItemEntity
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.ui.icons.EditIconPadded
@@ -92,7 +92,7 @@ fun ShoppingListScreen(
                 CircleIcon(
                     modifier = Modifier.padding(start = smallPadding),
                     imageVector = BackArrowIcon,
-                    contentDescription = "Назад"
+                    contentDescription = stringResource(R.string.go_back)
                 ) {
                     navigateBack()
                 }
@@ -159,7 +159,7 @@ fun ShoppingListScreen(
                         var updatedItemName by remember { mutableStateOf(editingListItem!!.name) }
                         Column(modifier = Modifier.padding(mediumPadding)) {
                             Text(
-                                text = "Редактировать элемент",
+                                text = stringResource(R.string.edit_item),
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Spacer(modifier = Modifier.height(mediumPadding))

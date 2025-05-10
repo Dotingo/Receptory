@@ -12,12 +12,6 @@ object Dimens {
     val circleTimerButtonSize = 100.dp // Размер круглой кнопки таймера
     /** 35.dp */
     val circleIconContainerSize = 35.dp // Размер контейнера для иконки
-    /** 250.dp */
-    val circleTimerProgressSize = 250.dp // Размер индикатора прогресса таймера
-    /** 6.dp */
-    val circleTimerProgressLineSize = 6.dp // Толщина линии индикатора таймера
-    /** 60.dp */
-    val timerControlsButtonSize = 60.dp // Размер кнопок управления таймером
     /** 12.dp */
     val buttonShapeSize = 12.dp // Радиус скругления кнопок
     /** 55.dp */

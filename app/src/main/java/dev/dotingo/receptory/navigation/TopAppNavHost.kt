@@ -22,6 +22,8 @@ import dev.dotingo.receptory.presentation.screens.settings_screen.SettingsScreen
 import dev.dotingo.receptory.presentation.screens.WelcomeScreen
 import dev.dotingo.receptory.presentation.screens.authorization.LoginScreen
 import dev.dotingo.receptory.presentation.screens.authorization.RegistrationScreen
+import dev.dotingo.receptory.presentation.screens.legal_screen.PrivacyPolicyScreen
+import dev.dotingo.receptory.presentation.screens.legal_screen.TermsOfUseScreen
 import dev.dotingo.receptory.presentation.screens.main_screen.MainScreen
 import dev.dotingo.receptory.presentation.screens.settings_screen.CategoriesEditScreen
 import dev.dotingo.receptory.presentation.screens.shopping_list_screen.ShoppingListScreen
@@ -51,7 +53,6 @@ fun TopAppNavHost(
         ) {
             composable<WelcomeScreenNav> {
                 WelcomeScreen(
-                    modifier = modifier,
                     navigateToOnboardingScreen = {
                         navController.navigate(OnboardingScreenNav) {
                             launchSingleTop = true
@@ -84,12 +85,21 @@ fun TopAppNavHost(
                             launchSingleTop = true
                             popUpTo(0)
                         }
+                    },
+                    navigateToTermOfUseScreen = {
+                        navController.navigate(TermOfUseScreenNav) {
+                            launchSingleTop = true
+                        }
+                    },
+                    navigateToPrivacyPolicyScreen = {
+                        navController.navigate(PrivacyPolicyScreenNav) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
 
-            composable<LoginScreenNav>(
-            ) {
+            composable<LoginScreenNav>{
                 LoginScreen(
                     modifier = modifier,
                     navigateToRegistrationScreen = {
@@ -100,6 +110,24 @@ fun TopAppNavHost(
                             launchSingleTop = true
                             popUpTo(0)
                         }
+                    }
+                )
+            }
+
+            composable<TermOfUseScreenNav> {
+                TermsOfUseScreen(
+                    modifier = modifier,
+                    navigateBack = {
+                        navigateBack(navController)
+                    }
+                )
+            }
+
+            composable<PrivacyPolicyScreenNav> {
+                PrivacyPolicyScreen(
+                    modifier = modifier,
+                    navigateBack = {
+                        navigateBack(navController)
                     }
                 )
             }

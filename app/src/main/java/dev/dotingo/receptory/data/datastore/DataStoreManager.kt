@@ -1,4 +1,4 @@
-package dev.dotingo.receptory.data.local.datastore
+package dev.dotingo.receptory.data.datastore
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -51,7 +51,7 @@ class DataStoreManager @Inject constructor (private val context: Context) {
         }
     }
 
-    suspend fun getThemeStrings(key: String): Flow<String?> {
+    fun getThemeStrings(key: String): Flow<String?> {
         return flow {
             val preferencesKey = stringPreferencesKey(key)
             val preference = context.themeDataStore.data.first()

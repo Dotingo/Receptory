@@ -9,34 +9,34 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.dotingo.receptory.data.local.database.dao.RecipeDao
-import dev.dotingo.receptory.data.local.database.dao.ShoppingItemDao
-import dev.dotingo.receptory.data.local.database.dao.ShoppingListDao
-import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
-import dev.dotingo.receptory.data.local.database.entities.ShoppingItemEntity
-import dev.dotingo.receptory.data.local.database.entities.ShoppingListEntity
-import dev.dotingo.receptory.utils.appendIfNotBlank
+import dev.dotingo.receptory.R
+import dev.dotingo.receptory.data.database.entities.RecipeEntity
+import dev.dotingo.receptory.data.database.entities.ShoppingItemEntity
+import dev.dotingo.receptory.data.database.entities.ShoppingListEntity
+import dev.dotingo.receptory.domain.repository.RecipeRepository
+import dev.dotingo.receptory.domain.repository.ShoppingItemRepository
+import dev.dotingo.receptory.domain.repository.ShoppingListRepository
+import dev.dotingo.receptory.presentation.screens.main_screen.appendIfNotBlank
+import dev.dotingo.receptory.utils.getLocalizedContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class RecipeScreenViewModel @Inject constructor(
-    private val recipeDao: RecipeDao,
-    private val shoppingListDao: ShoppingListDao,
-    private val shoppingItemDao: ShoppingItemDao
+    private val recipeRepository: RecipeRepository,
+    private val shoppingListRepository: ShoppingListRepository,
+    private val shoppingItemRepository: ShoppingItemRepository,
 ) : ViewModel() {
 
     var recipe by mutableStateOf(RecipeEntity())
         private set
 
     fun fetchRecipe(key: String) {
-        viewModelScope.launch {
-            recipe = recipeDao.getRecipeByKey(key) ?: recipe
+        viewModelScope.launch(Dispatchers.IO) {
+            recipe = recipeRepository.getRecipeByKey(key) ?: RecipeEntity()
         }
     }
 
@@ -44,28 +44,30 @@ class RecipeScreenViewModel @Inject constructor(
         val newFavoriteValue = !recipe.favorite
         recipe = recipe.copy(favorite = newFavoriteValue)
         viewModelScope.launch {
-            recipeDao.updateRecipe(recipe)
+            recipeRepository.updateRecipe(recipe)
         }
     }
 
     fun shareRecipe(recipe: RecipeEntity, context: Context) {
+        val languageCode = Locale.getDefault().language
+        val localizedContext = getLocalizedContext(context, languageCode)
         val recipeText = buildString {
-            appendIfNotBlank("Название: ", "\"${recipe.title}\"")
-            appendIfNotBlank("Описание:\n", recipe.description)
-            appendIfNotBlank("Категория: ", recipe.category)
-            appendIfNotBlank("Время приготовления: ", recipe.cookingTime)
-            appendIfNotBlank("Порции: ", recipe.portions)
-            appendIfNotBlank("Калории: ", recipe.kcal)
+            appendIfNotBlank("${localizedContext.getString(R.string.name)}: ", "\"${recipe.title}\"")
+            appendIfNotBlank("${localizedContext.getString(R.string.recipe_description)}:\n", recipe.description)
+            appendIfNotBlank("${localizedContext.getString(R.string.category)}: ", recipe.category)
+            appendIfNotBlank("${localizedContext.getString(R.string.cooking_time)}: ", recipe.cookingTime)
+            appendIfNotBlank("${localizedContext.getString(R.string.portions)}: ", recipe.portions)
+            appendIfNotBlank("${localizedContext.getString(R.string.calories)}: ", recipe.kcal)
 
             if (recipe.ingredients.isNotBlank()) {
-                append("\n🛒 Ингредиенты:\n")
+                append("\n🛒 ${localizedContext.getString(R.string.ingredients)}:\n")
                 recipe.ingredients.lines()
                     .filter { it.isNotBlank() }
                     .forEach { append("- $it\n") }
             }
 
             if (recipe.cookingSteps.isNotBlank()) {
-                append("\n👨‍🍳 Шаги приготовления:\n")
+                append("\n👨‍🍳 ${localizedContext.getString(R.string.cooking_steps)}:\n")
                 recipe.cookingSteps.lines()
                     .filter { it.isNotBlank() }
                     .forEachIndexed { index, step -> append("${index + 1}. $step\n") }
@@ -95,9 +97,9 @@ class RecipeScreenViewModel @Inject constructor(
 
     fun createShoppingListWithItems(name: String, ingredients: List<String>) {
         viewModelScope.launch(Dispatchers.IO) {
-            val listId = shoppingListDao.insert(ShoppingListEntity(name = name))
+            val listId = shoppingListRepository.insertShoppingList(ShoppingListEntity(name = name))
             val items = ingredients.map { ShoppingItemEntity(shoppingListId = listId.toLong(), name = it) }
-            shoppingItemDao.insertAll(items)
+            shoppingItemRepository.insertAllShoppingItems(items)
         }
     }
 }

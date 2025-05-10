@@ -85,6 +85,11 @@ fun EditRecipeScreen(
     viewModel: EditRecipeViewModel = hiltViewModel(),
     navigateBack: () -> Unit
 ) {
+    val maxDescriptionLength = 10000
+    val maxIngredientsLength = 5000
+    val maxCookingStepsLength = 15000
+    val maxTitleLength = 200
+
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isButtonEnabled by viewModel.isButtonEnabled.collectAsStateWithLifecycle()
@@ -168,7 +173,11 @@ fun EditRecipeScreen(
                 ReceptoryInputField(
                     modifier = Modifier.weight(1f),
                     value = uiState.title,
-                    onValueChange = { viewModel.onFieldChange(EditRecipeField.TITLE, it) },
+                    onValueChange = { newValue ->
+                        if (newValue.length <= maxTitleLength) {
+                            viewModel.onFieldChange(EditRecipeField.TITLE, newValue)
+                        }
+                    },
                     label = stringResource(R.string.name),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -242,7 +251,10 @@ fun EditRecipeScreen(
             Spacer(Modifier.height(mediumPadding))
             ReceptoryLargeInputField(
                 value = uiState.description,
-                onValueChange = { viewModel.onFieldChange(EditRecipeField.DESCRIPTION, it) },
+                onValueChange = { newValue ->
+                    if (newValue.length <= maxDescriptionLength) {
+                        viewModel.onFieldChange(EditRecipeField.DESCRIPTION, newValue)
+                    } },
                 label = stringResource(R.string.recipe_description),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
@@ -313,7 +325,10 @@ fun EditRecipeScreen(
             )
             ReceptoryLargeInputField(
                 value = uiState.ingredients,
-                onValueChange = { viewModel.onFieldChange(EditRecipeField.INGREDIENTS, it) },
+                onValueChange = { newValue ->
+                    if (newValue.length <= maxIngredientsLength) {
+                        viewModel.onFieldChange(EditRecipeField.INGREDIENTS, newValue)
+                    } },
                 label = stringResource(R.string.ingredients),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences
@@ -332,7 +347,10 @@ fun EditRecipeScreen(
             )
             ReceptoryLargeInputField(
                 value = uiState.cookingSteps,
-                onValueChange = { viewModel.onFieldChange(EditRecipeField.COOKING_STEPS, it) },
+                onValueChange = { newValue ->
+                    if (newValue.length <= maxCookingStepsLength) {
+                        viewModel.onFieldChange(EditRecipeField.COOKING_STEPS, newValue)
+                    } },
                 label = stringResource(R.string.cooking_steps),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences

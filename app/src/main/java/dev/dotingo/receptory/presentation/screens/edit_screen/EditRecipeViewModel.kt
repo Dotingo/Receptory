@@ -16,12 +16,14 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.dotingo.receptory.FirebaseUploadWorker
-import dev.dotingo.receptory.data.local.database.dao.RecipeDao
-import dev.dotingo.receptory.data.local.database.entities.CategoryEntity
-import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
-import dev.dotingo.receptory.data.local.repository.CategoryRepository
+import dev.dotingo.receptory.R
+import dev.dotingo.receptory.work_manager.FirebaseUploadWorker
+import dev.dotingo.receptory.data.database.entities.CategoryEntity
+import dev.dotingo.receptory.data.database.entities.RecipeEntity
 import dev.dotingo.receptory.di.ReceptoryApp
+import dev.dotingo.receptory.domain.repository.CategoryRepository
+import dev.dotingo.receptory.domain.repository.RecipeRepository
+import dev.dotingo.receptory.utils.getLocalizedContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +35,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
@@ -41,7 +44,7 @@ import javax.inject.Inject
 class EditRecipeViewModel @Inject constructor(
     private val application: ReceptoryApp,
     private val auth: FirebaseAuth,
-    private val recipeDao: RecipeDao,
+    private val recipeRepository: RecipeRepository,
     private val categoryRepository: CategoryRepository
 ) :
     ViewModel() {
@@ -79,6 +82,8 @@ class EditRecipeViewModel @Inject constructor(
     }
 
     fun saveCategory(name: String) {
+        val languageCode = Locale.getDefault().language
+        val localizedContext = getLocalizedContext(application, languageCode)
         viewModelScope.launch {
             val exists = _categories.value.any { it.name.equals(name.trim(), ignoreCase = true) }
             if (!exists) {
@@ -89,8 +94,8 @@ class EditRecipeViewModel @Inject constructor(
                 categoryRepository.insertCategory(category)
             } else {
                 Toast.makeText(
-                    application.applicationContext,
-                    "Категория с таким названием уже существует",
+                    localizedContext,
+                    localizedContext.getString(R.string.category_already_exists),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -117,7 +122,7 @@ class EditRecipeViewModel @Inject constructor(
 
     private fun loadRecipeByKey(key: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val recipeEntity = recipeDao.getRecipeByKey(key) // Метод нужно добавить в RecipeDao
+            val recipeEntity = recipeRepository.getRecipeByKey(key)
             recipeEntity?.let { entity ->
                 withContext(Dispatchers.Main) {
                     oldImageUrl = entity.imageUrl // Сохранение старого изображения
@@ -263,11 +268,11 @@ class EditRecipeViewModel @Inject constructor(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val existingRecipe = recipeDao.getRecipeByKey(recipe.recipeId)
+                val existingRecipe = recipeRepository.getRecipeByKey(recipe.recipeId)
                 if (existingRecipe != null) {
-                    recipeDao.updateRecipe(recipe) // Добавь метод update в DAO
+                    recipeRepository.updateRecipe(recipe)
                 } else {
-                    recipeDao.insertRecipe(recipe)
+                    recipeRepository.insertRecipe(recipe)
                 }
                 withContext(Dispatchers.Main) {
                     val constraints = Constraints.Builder()
@@ -281,7 +286,7 @@ class EditRecipeViewModel @Inject constructor(
 
                     WorkManager.getInstance(application.applicationContext).enqueueUniqueWork(
                         "firebase_sync",
-                        ExistingWorkPolicy.REPLACE, // Если нужно заменить предыдущее задание, если оно ещё не выполнено
+                        ExistingWorkPolicy.REPLACE,
                         firebaseUploadWorkRequest
                     )
                     onSaved()
@@ -289,6 +294,7 @@ class EditRecipeViewModel @Inject constructor(
             } catch (e: IOException) {
                 withContext(Dispatchers.Main) {
                     onError()
+                    Log.e("EditRecipeViewModel", "Error saving recipe", e)
                 }
             }
         }

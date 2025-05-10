@@ -3,6 +3,7 @@ package dev.dotingo.receptory.presentation.screens.main_screen
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,28 +12,35 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.dotingo.receptory.FirebaseUploadWorker
+import dev.dotingo.receptory.work_manager.FirebaseUploadWorker
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.R.string.recipe_description
-import dev.dotingo.receptory.data.local.database.dao.RecipeDao
-import dev.dotingo.receptory.data.local.database.entities.CategoryEntity
-import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
-import dev.dotingo.receptory.data.local.repository.CategoryRepository
-import dev.dotingo.receptory.utils.appendIfNotBlank
+import dev.dotingo.receptory.data.database.entities.CategoryEntity
+import dev.dotingo.receptory.data.database.entities.RecipeEntity
+import dev.dotingo.receptory.domain.repository.CategoryRepository
+import dev.dotingo.receptory.domain.repository.RecipeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.File
+import java.io.FileOutputStream
+import java.net.URL
 import javax.inject.Inject
 
 @HiltViewModel
 class MainScreenViewModel @Inject constructor(
     private val application: Application,
-    private val recipeDao: RecipeDao,
-    private val categoryRepository: CategoryRepository
+    private val recipeRepository: RecipeRepository,
+    private val categoryRepository: CategoryRepository,
+    private val firebaseFirestore: FirebaseFirestore,
+    private val auth: FirebaseAuth
 ) : ViewModel() {
 
     private val _recipesList = MutableStateFlow<List<RecipeEntity>>(emptyList())
@@ -43,12 +51,170 @@ class MainScreenViewModel @Inject constructor(
 
     private val _isDescending = MutableStateFlow(true)
     val isDescending: StateFlow<Boolean> = _isDescending.asStateFlow()
+
+    private val _currentSortType = MutableStateFlow(SortType.DATE)
+
+    private val _isFavoriteFilterOn = MutableStateFlow(false)
+    val isFavoriteFilterOn: StateFlow<Boolean> = _isFavoriteFilterOn.asStateFlow()
+
+    private val _isSortFilterOpen = MutableStateFlow(false)
+    val isSortFilterOpen: StateFlow<Boolean> = _isSortFilterOpen.asStateFlow()
+
+    private val _isCategoryFilterOpen = MutableStateFlow(false)
+    val isCategoryFilterOpen: StateFlow<Boolean> = _isCategoryFilterOpen.asStateFlow()
+
+
+    private val _updatedRecipes = MutableStateFlow<List<RecipeEntity>>(emptyList())
+    val updatedRecipes: StateFlow<List<RecipeEntity>> = _updatedRecipes
+
+    private fun areRecipesDifferentExcludingImage(server: RecipeEntity, local: RecipeEntity): Boolean {
+        return server.copy(imageUrl = local.imageUrl) != local
+    }
+
+    fun clearUpdates() {
+        _updatedRecipes.value = emptyList()
+    }
+
+    fun checkUpdatesNow() {
+        val userId = auth.currentUser?.uid ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                //рецепты
+                val recipeSnapshot = firebaseFirestore.collection("recipes")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+                val serverRecipeList = recipeSnapshot.toObjects(RecipeEntity::class.java)
+                val serverRecipeMap = serverRecipeList.associateBy { it.recipeId }
+
+                val localRecipeList = recipeRepository.getAllRecipes().first()
+                val localRecipeMap = localRecipeList.associateBy { it.recipeId }
+
+                val updatedOrNew = serverRecipeList.filter { server ->
+                    localRecipeMap[server.recipeId]?.let { local ->
+                        areRecipesDifferentExcludingImage(server, local)
+                    } != false
+                }
+
+                val deleted = localRecipeList.filter { it.recipeId !in serverRecipeMap }
+
+                _updatedRecipes.value = updatedOrNew + deleted
+
+                //категории
+                val categorySnapshot = firebaseFirestore.collection("categories")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+                val serverCategoryList = categorySnapshot.toObjects(CategoryEntity::class.java)
+                val serverCategoryMap = serverCategoryList.associateBy { it.categoryId }
+
+                val localCategoryList = categoryRepository.getAllCategories().first()
+                val localCategoryMap = localCategoryList.associateBy { it.categoryId }
+
+                val updatedOrNewCategories = serverCategoryList.filter { server ->
+                    localCategoryMap[server.categoryId]?.let { local ->
+                        server != local
+                    } != false
+                }
+
+                val deletedCategories = localCategoryList.filter { it.categoryId !in serverCategoryMap }
+
+                if (updatedOrNewCategories.isNotEmpty() || deletedCategories.isNotEmpty()) {
+                    Log.d("MainVM", "Категории требуют обновления: ${updatedOrNewCategories.size} новых/обновленных, ${deletedCategories.size} удалённых")
+                }
+
+            } catch (e: Exception) {
+                Log.e("MainVM", "checkUpdatesNow failed", e)
+            }
+        }
+    }
+
+    fun applyServerUpdates() {
+        val userId = auth.currentUser?.uid ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                //рецепты
+                val recipeSnapshot = firebaseFirestore.collection("recipes")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+                val serverRecipeList = recipeSnapshot.toObjects(RecipeEntity::class.java)
+                val serverRecipeMap = serverRecipeList.associateBy { it.recipeId }
+
+                val localRecipeList = recipeRepository.getAllRecipes().first()
+                val localRecipeMap = localRecipeList.associateBy { it.recipeId }
+
+                val toDelete = localRecipeList.filter { it.recipeId !in serverRecipeMap }
+                toDelete.forEach {
+                    recipeRepository.deleteRecipe(it.recipeId)
+                }
+
+                val toInsertOrUpdate = serverRecipeList.map { server ->
+                    val localRecipe = localRecipeMap[server.recipeId]
+
+                    if (server.imageUrl.startsWith("http")) {
+                        val newFile = try {
+                            URL(server.imageUrl).openStream().use { input ->
+                                val file = File(
+                                    application.filesDir,
+                                    "${server.recipeId}-${System.currentTimeMillis()}.jpg"
+                                )
+                                FileOutputStream(file).use { output -> input.copyTo(output) }
+                                file
+                            }
+                        } catch (e: Exception) {
+                            Log.e("MainVM", "Image download failed: ${server.imageUrl}", e)
+                            null
+                        }
+
+                        if (newFile != null) {
+                            localRecipe?.imageUrl?.let { oldPath ->
+                                if (oldPath.startsWith(application.filesDir.absolutePath)) {
+                                    val oldFile = File(oldPath)
+                                    if (oldFile.exists()) oldFile.delete()
+                                }
+                            }
+
+                            server.copy(imageUrl = newFile.absolutePath)
+                        } else {
+                            server
+                        }
+                    } else {
+                        server
+                    }
+                }
+
+                recipeRepository.insertAllRecipes(toInsertOrUpdate)
+                _updatedRecipes.value = emptyList()
+
+                //категории
+                val categorySnapshot = firebaseFirestore.collection("categories")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+                val serverCategoryList = categorySnapshot.toObjects(CategoryEntity::class.java)
+                val serverCategoryMap = serverCategoryList.associateBy { it.categoryId }
+
+                val localCategoryList = categoryRepository.getAllCategories().first()
+
+                val toDeleteCategories = localCategoryList.filter { it.categoryId !in serverCategoryMap }
+                toDeleteCategories.forEach {
+                    categoryRepository.deleteCategory(it.categoryId)
+                }
+
+                categoryRepository.insertAllCategories(serverCategoryList)
+
+            } catch (e: Exception) {
+                Log.e("MainVM", "applyServerUpdates failed", e)
+            }
+        }
+    }
+
     fun changeDescending(value: Boolean) {
         _isDescending.value = value
         applyCurrentSorting()
     }
 
-    private val _currentSortType = MutableStateFlow(SortType.DATE)
     fun setSortType(sortType: SortType) {
         _currentSortType.value = sortType
         applyCurrentSorting()
@@ -63,20 +229,12 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    private val _isFavoriteFilterOn = MutableStateFlow(false)
-    val isFavoriteFilterOn: StateFlow<Boolean> = _isFavoriteFilterOn.asStateFlow()
     fun changeFavFilter(value: Boolean) {
         _isFavoriteFilterOn.value = value
     }
-
-    private val _isSortFilterOpen = MutableStateFlow(false)
-    val isSortFilterOpen: StateFlow<Boolean> = _isSortFilterOpen.asStateFlow()
     fun toggleSortFilter() {
         _isSortFilterOpen.value = !_isSortFilterOpen.value
     }
-
-    private val _isCategoryFilterOpen = MutableStateFlow(false)
-    val isCategoryFilterOpen: StateFlow<Boolean> = _isCategoryFilterOpen.asStateFlow()
     fun changeCategoryFilter(value: Boolean) {
         _isCategoryFilterOpen.value = value
     }
@@ -90,8 +248,9 @@ class MainScreenViewModel @Inject constructor(
     }
 
     fun fetchAllRecipes() {
+
         viewModelScope.launch(Dispatchers.IO) {
-            recipeDao.getAllRecipes().collect { recipeEntities ->
+            recipeRepository.getAllRecipes().collect{ recipeEntities ->
                 _recipesList.value = recipeEntities
                 applyCurrentSorting()
             }
@@ -115,7 +274,7 @@ class MainScreenViewModel @Inject constructor(
                 ExistingWorkPolicy.REPLACE,
                 firebaseUploadWorkRequest
             )
-            recipeDao.deleteRecipe(key)
+            recipeRepository.deleteRecipe(key)
         }
     }
 
@@ -124,10 +283,10 @@ class MainScreenViewModel @Inject constructor(
         isLiked: Boolean
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            val recipeEntity = recipeDao.getRecipeByKey(key)
+            val recipeEntity = recipeRepository.getRecipeByKey(key)
             recipeEntity?.let {
                 val updatedEntity = it.copy(favorite = !isLiked)
-                recipeDao.insertRecipe(updatedEntity)
+                recipeRepository.insertRecipe(updatedEntity)
             }
             applyCurrentSorting()
         }
@@ -228,4 +387,8 @@ class MainScreenViewModel @Inject constructor(
 
 enum class SortType {
     NAME, DATE, RATING, CALORIES
+}
+
+fun StringBuilder.appendIfNotBlank(label: String, value: String) {
+    if (value.isNotBlank()) append("$label$value\n")
 }

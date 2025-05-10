@@ -368,7 +368,7 @@ private fun IngredientsSection(
         ingredientSelection.clear()
         ingredients.lines().filter { it.isNotBlank() }.forEach { ingredient ->
             shoppingList.add(ingredient)
-            ingredientSelection[ingredient] = false // По умолчанию все в списке
+            ingredientSelection[ingredient] = false
         }
     }
 

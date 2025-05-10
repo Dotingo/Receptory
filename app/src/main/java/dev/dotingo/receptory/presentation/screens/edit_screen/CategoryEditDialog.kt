@@ -28,7 +28,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -52,11 +51,13 @@ fun CategoryEditDialog(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var expanded by remember { mutableStateOf(false) }
-    val selectedCategories = uiState.selectedCategories
-        .split(",")
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .toMutableStateList()
+
+    val selectedCategories = remember(uiState.selectedCategories) {
+        uiState.selectedCategories
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+    }
 
     var selectedItemsText by remember { mutableStateOf(uiState.selectedCategories) }
 
@@ -120,7 +121,7 @@ fun CategoryEditDialog(
                                 },
                                 elevation = FloatingActionButtonDefaults.elevation(0.dp)
                             ) {
-                                Icon(PlusIcon, contentDescription = "Добавить категорию")
+                                Icon(PlusIcon, contentDescription = stringResource(R.string.add_category))
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -132,18 +133,13 @@ fun CategoryEditDialog(
                                 val isSelected = selectedCategories.contains(item.name)
                                 CheckboxRow(text = item.name, checked = isSelected) {
                                     viewModel.toggleCategory(item.name)
-                                    if (isSelected) {
-                                        selectedCategories.remove(item.name)
-                                    } else {
-                                        selectedCategories.add(item.name)
-                                    }
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         TextButton(
                             onClick = {
-                                selectedItemsText = selectedCategories.joinToString(", ")
+                                selectedItemsText = uiState.selectedCategories
                                 viewModel.setSelectedCategories(selectedCategories)
                                 expanded = false
                             },

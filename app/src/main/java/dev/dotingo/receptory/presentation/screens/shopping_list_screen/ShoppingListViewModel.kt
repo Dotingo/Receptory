@@ -6,10 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.data.local.database.dao.ShoppingItemDao
-import dev.dotingo.receptory.data.local.database.dao.ShoppingListDao
-import dev.dotingo.receptory.data.local.database.entities.ShoppingItemEntity
-import dev.dotingo.receptory.data.local.database.entities.ShoppingListEntity
+import dev.dotingo.receptory.data.database.entities.ShoppingItemEntity
+import dev.dotingo.receptory.data.database.entities.ShoppingListEntity
+import dev.dotingo.receptory.domain.repository.ShoppingItemRepository
+import dev.dotingo.receptory.domain.repository.ShoppingListRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,39 +24,39 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShoppingListViewModel @Inject constructor(
-    private val shoppingListDao: ShoppingListDao,
-    private val shoppingItemDao: ShoppingItemDao
+    private val shoppingListRepository: ShoppingListRepository,
+    private val shoppingItemRepository: ShoppingItemRepository
 ) : ViewModel() {
-    val shoppingLists = shoppingListDao.getAllShoppingListsWithItemsFlow().flowOn(Dispatchers.IO)
+    val shoppingLists = shoppingListRepository.getAllShoppingListsWithItemsFlow().flowOn(Dispatchers.IO)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addShoppingList(name: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            shoppingListDao.insert(ShoppingListEntity(name = name))
+            shoppingListRepository.insertShoppingList(ShoppingListEntity(name = name))
         }
     }
 
     fun deleteShoppingList(shoppingList: ShoppingListEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            shoppingListDao.delete(shoppingList)
+            shoppingListRepository.deleteShoppingList(shoppingList)
         }
     }
 
     fun updateShoppingList(shoppingList: ShoppingListEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            shoppingListDao.update(shoppingList)
+            shoppingListRepository.updateShoppingList(shoppingList)
         }
     }
 
     fun deleteShoppingItem(shoppingItem: ShoppingItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            shoppingItemDao.delete(shoppingItem)
+            shoppingItemRepository.deleteShoppingItem(shoppingItem)
         }
     }
 
     fun updateShoppingItem(shoppingItem: ShoppingItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            shoppingItemDao.update(shoppingItem)
+            shoppingItemRepository.updateShoppingItem(shoppingItem)
         }
     }
 
@@ -69,7 +69,7 @@ class ShoppingListViewModel @Inject constructor(
     val shoppingItems: StateFlow<List<ShoppingItemEntity>> = _shoppingListId
         .filterNotNull()
         .flatMapLatest { id ->
-            shoppingItemDao.getItemsForShoppingListFlow(id)
+            shoppingItemRepository.getItemsForShoppingListFlow(id)
                 .flowOn(Dispatchers.IO)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -77,7 +77,7 @@ class ShoppingListViewModel @Inject constructor(
     fun addItem(name: String) {
         val listId = _shoppingListId.value ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            shoppingItemDao.insert(
+            shoppingItemRepository.insertShoppingItem(
                 ShoppingItemEntity(shoppingListId = listId, name = name, isPurchased = false)
             )
         }
@@ -85,7 +85,7 @@ class ShoppingListViewModel @Inject constructor(
 
     fun toggleItemPurchased(item: ShoppingItemEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            shoppingItemDao.update(item.copy(isPurchased = !item.isPurchased))
+            shoppingItemRepository.updateShoppingItem(item.copy(isPurchased = !item.isPurchased))
         }
     }
 

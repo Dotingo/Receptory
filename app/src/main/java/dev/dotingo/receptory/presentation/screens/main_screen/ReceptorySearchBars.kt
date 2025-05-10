@@ -28,8 +28,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import dev.dotingo.receptory.R
 import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
@@ -117,7 +119,7 @@ fun RecipeSearchBar(
                 isSortFilterOpen = !isSortFilterOpen
                 onSortFilterClicked(isSortFilterOpen)
             }) {
-                Icon(FilterArrowIcon, "Фильтр сортировки")
+                Icon(FilterArrowIcon, stringResource(R.string.sort_filter))
             }
             IconButton(onClick = {
                 isFavoriteOn = !isFavoriteOn
@@ -125,7 +127,7 @@ fun RecipeSearchBar(
             }) {
                 Icon(
                      if (isFavoriteOn) FavoriteBoldIcon else FavoriteOutlinedIcon,
-                    "Фильтр фаворитов",
+                    stringResource(R.string.fav_filter),
                     tint = favoriteColor
                 )
             }

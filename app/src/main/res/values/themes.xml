@@ -7,5 +7,5 @@
         <item name="postSplashScreenTheme">@style/Theme.Receptory</item>
     </style>
 
-    <style name="Theme.Receptory" parent="android:Theme.Material.Light.NoActionBar"/>
+    <style name="Theme.Receptory" parent="Theme.AppCompat.Light.NoActionBar"/>
 </resources>

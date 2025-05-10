@@ -1,27 +1,35 @@
 package dev.dotingo.receptory.presentation.screens.authorization
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.AuthResult
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.nulabinc.zxcvbn.Zxcvbn
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.dotingo.receptory.data.local.database.dao.CategoryDao
-import dev.dotingo.receptory.data.local.database.dao.RecipeDao
-import dev.dotingo.receptory.data.local.database.entities.CategoryEntity
-import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
-import dev.dotingo.receptory.data.local.datastore.DataStoreManager
+import dev.dotingo.receptory.R
+import dev.dotingo.receptory.data.database.entities.CategoryEntity
+import dev.dotingo.receptory.data.database.entities.RecipeEntity
+import dev.dotingo.receptory.data.datastore.DataStoreManager
 import dev.dotingo.receptory.di.ReceptoryApp
-import kotlinx.coroutines.DelicateCoroutinesApi
+import dev.dotingo.receptory.domain.repository.CategoryRepository
+import dev.dotingo.receptory.domain.repository.RecipeRepository
+import dev.dotingo.receptory.utils.AuthUtils
+import dev.dotingo.receptory.utils.getLocalizedContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -29,6 +37,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,17 +45,76 @@ class AuthorizationViewModel @Inject constructor(
     private val application: ReceptoryApp,
     private val dataStoreManager: DataStoreManager,
     private val auth: FirebaseAuth,
-    private val recipeDao: RecipeDao,
-    private val categoryDao: CategoryDao,
+    private val recipeRepository: RecipeRepository,
+    private val categoryRepository: CategoryRepository,
     private val firebaseFirestore: FirebaseFirestore
 ) : ViewModel() {
+    private val _navEvents = MutableSharedFlow<NavEvent>()
+    val navEvents = _navEvents.asSharedFlow()
+
+    sealed class NavEvent {
+        data object ToMain : NavEvent()
+        data object ToLogin : NavEvent()
+    }
+
     private val _uiState = MutableStateFlow(AuthUiState())
-    val uiState: StateFlow<AuthUiState> = _uiState
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     private val _verificationDialog = MutableStateFlow(false)
     val verificationDialog: StateFlow<Boolean> = _verificationDialog
     fun closeVerificationDialog() {
         _verificationDialog.value = false
+    }
+
+    fun onGoogleSignInResult(result: AuthResult) {
+        val user = result.user ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                dataStoreManager.setUserLoggedIn(true)
+                fetchAndSaveUserData(user.uid)
+                _navEvents.emit(NavEvent.ToMain)
+            } catch (e: Exception){
+                _uiState.update { it.copy(authErrorMessage = e.message ?: "", isLoading = false) }
+            }
+        }
+    }
+
+    private suspend fun fetchAndSaveUserData(userId: String) = withContext(Dispatchers.IO) {
+        try {
+            val recipesSnapshot = firebaseFirestore
+                .collection("recipes")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+            val recipes = recipesSnapshot.toObjects(RecipeEntity::class.java)
+            val updatedRecipes = recipes.map { recipe ->
+                if (recipe.imageUrl.startsWith("https://")) {
+                    val localPath = downloadImageAndSaveLocally(
+                        imageUrl = recipe.imageUrl,
+                        fileName = "${recipe.recipeId}.jpg"
+                    )
+                    if (localPath != null) {
+                        recipe.copy(imageUrl = localPath)
+                    } else {
+                        recipe
+                    }
+                } else {
+                    recipe
+                }
+            }
+            recipeRepository.insertAllRecipes(updatedRecipes)
+            val categoriesSnapshot = firebaseFirestore
+                .collection("categories")
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+            val categories = categoriesSnapshot.toObjects(CategoryEntity::class.java)
+            categoryRepository.insertAllCategories(categories)
+
+        } catch (e: Exception) {
+            Log.e("AuthorizationVM", "fetchAndSaveUserData failed: ${e.localizedMessage}", e)
+        }
     }
 
     fun updateEmail(email: String) {
@@ -67,135 +135,154 @@ class AuthorizationViewModel @Inject constructor(
         )
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     fun signIn(onSuccessful: () -> Unit) {
+        val languageCode = Locale.getDefault().language
+        val localizedContext = getLocalizedContext(application, languageCode)
         val state = _uiState.value
+
         if (state.email.isBlank() || state.password.isBlank()) {
+            _uiState.value = state.copy(
+                authErrorMessage = localizedContext.getString(R.string.error_email_password_empty)
+            )
             return
         }
 
         _uiState.value = state.copy(isLoading = true)
+
         auth.signInWithEmailAndPassword(state.email, state.password)
-            .addOnCompleteListener { task ->
-                _uiState.value = state.copy(isLoading = false)
-                if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    if (user != null && user.isEmailVerified) {
-                        viewModelScope.launch {
+            .addOnSuccessListener { authResult ->
+                val user = authResult.user
+                if (user != null && user.isEmailVerified) {
+                    viewModelScope.launch {
+                        try {
                             dataStoreManager.setUserLoggedIn(true)
-                        }
-                        val userId = auth.currentUser?.uid
-                        Log.d("FirebaseDebug", "User ID: $userId")
-                        viewModelScope.launch(SupervisorJob() + Dispatchers.IO){
-                            try {
-                                Log.d("FirebaseDebug", "Fetching recipes...")
-                                val recipesSnapshot = firebaseFirestore.collection("recipes")
-                                    .whereEqualTo("userId", userId)
-                                    .get()
-                                    .await()
-
-                                Log.d("FirebaseDebug", "Recipes fetched: ${recipesSnapshot.documents.size}")
-
-                                val recipes = recipesSnapshot.toObjects(RecipeEntity::class.java)
-
-                                val categoriesSnapshot = firebaseFirestore.collection("categories")
-                                    .whereEqualTo("userId", userId)
-                                    .get()
-                                    .await()
-
-                                Log.d("FirebaseDebug", "Categories fetched: ${categoriesSnapshot.documents.size}")
-
-                                val categories = categoriesSnapshot.toObjects(CategoryEntity::class.java)
-
-                                // Обновляем рецепты: скачиваем изображение и сохраняем локально
-                                val updatedRecipes = recipes.map { recipe ->
-                                    // Предполагаем, что если ссылка начинается с "https://", это ссылка на Firebase Storage
-                                    if (recipe.imageUrl.isNotEmpty() && recipe.imageUrl.startsWith("https://")) {
-                                        Log.d("FirebaseDebug", "Downloading image: ${recipe.imageUrl}")
-                                        val localFileName = "${recipe.recipeId}.jpg"
-                                        val localPath = downloadImageAndSaveLocally(recipe.imageUrl, localFileName)
-                                        if (localPath != null) {
-                                            Log.d("FirebaseDebug", "Image saved locally: $localPath")
-                                            recipe.copy(imageUrl = localPath)
-                                        } else {
-                                            Log.d("FirebaseDebug", "Image download failed: ${recipe.imageUrl}")
-                                            recipe // Если не удалось скачать, оставляем оригинальный путь
-                                        }
-                                    } else {
-                                        recipe
-                                    }
-                                }
-                                Log.d("FirebaseDebug", "Inserting recipes into DB...")
-                                recipeDao.insertAllRecipes(updatedRecipes)
-                                categoryDao.insertAllCategories(categories)
-                                Log.d("FirebaseDebug", "Data inserted successfully.")
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                Log.e("FirebaseDebug", "Error: ${e.localizedMessage}")
+                            fetchAndSaveUserData(user.uid)
+                            _uiState.update { it.copy(isLoading = false) }
+                            onSuccessful()
+                        } catch (e: Exception) {
+                            Log.e("AuthorizationVM", "signIn data fetch failed: ${e.localizedMessage}", e)
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    authErrorMessage = localizedContext.getString(R.string.error_data_sync_failed)
+                                )
                             }
                         }
-                        onSuccessful()
-                    } else {
-                        _uiState.value = state.copy(
-                            authErrorMessage = "Почта не подтверждена. Проверьте письмо для подтверждения."
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            authErrorMessage = localizedContext.getString(R.string.error_email_not_verified)
                         )
                     }
                 }
             }
-            .addOnFailureListener {
-                _uiState.value = state.copy(
-                    isLoading = false,
-                    authErrorMessage = it.localizedMessage ?: "Ошибка входа"
-                )
+            .addOnFailureListener { exception ->
+                val errorMessage = getFirebaseAuthErrorMessage(exception, localizedContext)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        authErrorMessage = errorMessage
+                    )
+                }
             }
     }
 
-    private suspend fun downloadImageAndSaveLocally(imageUrl: String, fileName: String): String? = withContext(
-        Dispatchers.IO) {
-        try {
-            val url = URL(imageUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.doInput = true
-            connection.connect()
-            val inputStream = connection.inputStream
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream.close()
-
-            val imageFile = File(application.filesDir, fileName)
-            val outputStream = FileOutputStream(imageFile)
-            // Можно настроить качество по необходимости
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-            outputStream.flush()
-            outputStream.close()
-
-            imageFile.absolutePath
-        } catch (e: Exception) {
-            Log.d("downloadImageAndSaveLocally", "${e.localizedMessage}")
-            e.printStackTrace()
-            null
+    private suspend fun downloadImageAndSaveLocally(imageUrl: String, fileName: String): String? =
+        withContext(
+            Dispatchers.IO
+        ) {
+            try {
+                val url = URL(imageUrl)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.doInput = true
+                connection.connect()
+                val inputStream = connection.inputStream
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
+                val imageFile = File(application.filesDir, fileName)
+                val outputStream = FileOutputStream(imageFile)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                outputStream.flush()
+                outputStream.close()
+                imageFile.absolutePath
+            } catch (e: Exception) {
+                Log.d("downloadImageAndSaveLocally", "${e.localizedMessage}")
+                e.printStackTrace()
+                null
+            }
         }
-    }
 
-    fun signUp() {
-        val state = _uiState.value
-        if (state.email.isBlank() || state.password.isBlank()) {
+    @Suppress("DEPRECATION")
+    fun registerOrLinkByEmail(onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val languageCode = Locale.getDefault().language
+        val localizedContext = getLocalizedContext(application, languageCode)
+        val email = _uiState.value.email
+        val password = _uiState.value.password
+        if (email.isBlank() || password.isBlank()) {
+            onError(localizedContext.getString(R.string.error_email_password_empty))
             return
         }
 
-        _uiState.value = state.copy(isLoading = true)
-        auth.createUserWithEmailAndPassword(state.email, state.password)
-            .addOnCompleteListener { task ->
-                _uiState.value = state.copy(isLoading = false)
-                if (task.isSuccessful && state.passwordError.isEmpty()) {
-                    auth.currentUser!!.sendEmailVerification()
-                    _verificationDialog.value = true
+        _uiState.value = _uiState.value.copy(isLoading = true)
+
+        viewModelScope.launch {
+            try {
+                val methodsResult = auth.fetchSignInMethodsForEmail(email).await()
+                val methods = methodsResult.signInMethods ?: emptyList()
+
+                when {
+                    "google.com" in methods && auth.currentUser != null -> {
+                        val credential = EmailAuthProvider.getCredential(email, password)
+                        auth.currentUser!!
+                            .linkWithCredential(credential)
+                            .addOnCompleteListener { task ->
+                                _uiState.value = _uiState.value.copy(isLoading = false)
+                                if (task.isSuccessful) {
+                                    onSuccess()
+                                } else {
+                                    onError(
+                                        task.exception?.localizedMessage
+                                            ?: localizedContext.getString(R.string.error_link_failed)
+                                    )
+                                }
+                            }
+                    }
+
+                    methods.isEmpty() -> {
+                        auth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                _uiState.value = _uiState.value.copy(isLoading = false)
+                                if (task.isSuccessful) {
+                                    val currentLanguage = Locale.getDefault().language
+                                    auth.setLanguageCode(currentLanguage)
+                                    auth.currentUser!!.sendEmailVerification()
+                                    _verificationDialog.value = true
+                                    onSuccess()
+                                } else {
+                                    val errorMessage = getFirebaseAuthErrorMessage(
+                                        task.exception,
+                                        localizedContext
+                                    )
+                                    onError(errorMessage)
+                                }
+                            }
+                    }
+
+                    else -> {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        onError(localizedContext.getString(R.string.error_already_registered))
+                    }
                 }
-            }.addOnFailureListener {
-                _uiState.value = state.copy(
-                    isLoading = false,
-                    authErrorMessage = it.localizedMessage ?: "Ошибка регистрации"
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                onError(
+                    e.localizedMessage
+                        ?: localizedContext.getString(R.string.error_fetch_sign_in_methods)
                 )
             }
+        }
     }
 
     fun monitorEmailVerification(onEmailVerified: () -> Unit) {
@@ -218,29 +305,21 @@ class AuthorizationViewModel @Inject constructor(
     }
 
     private fun validatePassword(password: String): String {
-        val regex = Regex("^(?=.*[A-Za-z])(?=.*\\d).{6,}\$")
+        val languageCode = Locale.getDefault().language
+        val localizedContext = getLocalizedContext(application, languageCode)
+        val regex = Regex("^(?=.*[A-Za-z])(?=.*\\d).{6,}$")
         val zxcvbn = Zxcvbn()
         return when {
-            password.isEmpty() -> "Пароль не должен быть пуст"
-            password.length < 6 -> "Пароль должен содержать не менее 6 символов"
-            !regex.matches(password) -> "Пароль должен содержать цифры и латинские буквы"
-            zxcvbn.measure(password).score < 2 -> "Пароль слишком простой"
+            password.isEmpty() -> localizedContext.getString(R.string.password_empty)
+            password.length < 6 -> localizedContext.getString(R.string.password_length)
+            !regex.matches(password) -> localizedContext.getString(R.string.password_format)
+            zxcvbn.measure(password).score < 2 -> localizedContext.getString(R.string.password_simple)
             else -> ""
         }
     }
 
-    fun resetPassword(){
-        if (_uiState.value.email.isNotEmpty()) {
-            auth.sendPasswordResetEmail(_uiState.value.email)
-                .addOnSuccessListener {
-                    Toast.makeText(application.applicationContext, "Ссылка для сброса пароля отправлена", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    Log.d("MyLog","Ошибка: ${e.localizedMessage}")
-                }
-        } else {
-            Toast.makeText(application.applicationContext, "Введите email перед сбросом пароля", Toast.LENGTH_SHORT).show()
-        }
+    fun resetPassword() {
+        AuthUtils.resetPassword(_uiState.value.email, application.applicationContext)
     }
 
     data class AuthUiState(
@@ -251,5 +330,27 @@ class AuthorizationViewModel @Inject constructor(
         val authErrorMessage: String = "",
         val isLoading: Boolean = false
     )
+
+    fun getFirebaseAuthErrorMessage(exception: Exception?, context: Context): String {
+        return when (exception) {
+            is FirebaseAuthException -> {
+                when (exception.errorCode) {
+                    "ERROR_WRONG_PASSWORD" -> context.getString(R.string.error_wrong_password)
+                    "ERROR_USER_NOT_FOUND" -> context.getString(R.string.error_user_not_found)
+                    "ERROR_EMAIL_ALREADY_IN_USE" -> context.getString(R.string.error_email_already_used)
+                    "ERROR_INVALID_EMAIL" -> context.getString(R.string.error_invalid_email)
+                    "ERROR_INVALID_CREDENTIAL" -> context.getString(R.string.error_invalid_credential)
+                    "ERROR_USER_DISABLED" -> context.getString(R.string.error_user_disabled)
+                    "ERROR_WEAK_PASSWORD" -> context.getString(R.string.error_weak_password)
+                    "ERROR_OPERATION_NOT_ALLOWED" -> context.getString(R.string.error_operation_not_allowed)
+                    "ERROR_TOO_MANY_REQUESTS" -> context.getString(R.string.error_too_many_requests)
+                    else -> context.getString(R.string.error_unknown)
+                }
+            }
+
+            else -> exception?.localizedMessage ?: context.getString(R.string.error_unknown)
+        }
+    }
 }
+
 

@@ -1,5 +1,7 @@
 package dev.dotingo.receptory.presentation.screens.settings_screen
 
+import androidx.activity.compose.LocalActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -11,7 +13,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,8 +55,6 @@ fun SettingsScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
 
-    var vibrationSwitchChecked by remember { mutableStateOf(true) }
-
     var selectedTheme by remember { mutableStateOf(settingsUiState.getThemeValue) }
     var themeLocation by remember { mutableIntStateOf(0) }
 
@@ -78,7 +77,7 @@ fun SettingsScreen(
                 CircleIcon(
                     modifier = Modifier.padding(start = smallPadding),
                     imageVector = BackArrowIcon,
-                    contentDescription = "Назад"
+                    contentDescription = stringResource(R.string.go_back)
                 ) {
                     navigateBack()
                 }
@@ -95,6 +94,7 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 5.dp)
             )
+
             ListItem(
                 headlineContent = {
                     Text(
@@ -114,6 +114,7 @@ fun SettingsScreen(
                         showLanguageDialog = true
                     })
             )
+
             ListItem(
                 headlineContent = {
                     Text(
@@ -121,7 +122,11 @@ fun SettingsScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 },
-                supportingContent = { Text(selectedTheme) },
+                supportingContent = {
+                    if (selectedTheme == "Темная") Text(stringResource(R.string.dark_mode)) else Text(
+                        stringResource(R.string.light_mode)
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = {
@@ -142,24 +147,6 @@ fun SettingsScreen(
                     .clickable(onClick = {
                         navigateToCategoriesEditScreen()
                     })
-            )
-
-            ListItem(
-                headlineContent = {
-                    Text(
-                        stringResource(R.string.timer_vibration_settings),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                supportingContent = { Text(stringResource(R.string.enable_timer_vibration)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = {
-                        vibrationSwitchChecked = !vibrationSwitchChecked
-                    }),
-                trailingContent = {
-                    Switch(vibrationSwitchChecked, { vibrationSwitchChecked = !vibrationSwitchChecked })
-                }
             )
             HorizontalDivider(Modifier.padding(vertical = 15.dp))
             Text(
@@ -182,6 +169,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = {
+                        viewModel.resetPassword(auth.currentUser?.email ?: "")
                         if (auth.currentUser == null) navigateToRegistrationScreen()
                         else { //nothing
                         }
@@ -226,14 +214,17 @@ fun SettingsScreen(
             }
 
             if (showLanguageDialog) {
+                val activity = LocalActivity.current as? AppCompatActivity
                 SingleSelectDialog(
                     modifier = modifier,
                     title = stringResource(R.string.select_language),
                     optionsList = appLanguages.map { it.displayLanguage },
                     defaultSelected = appLanguages.indexOfFirst { it.code == settingsUiState.selectedLanguage },
                     onSubmitButtonClick = { selectedIndex ->
-                        val selectedLanguageCode = appLanguages[selectedIndex].code
-                        viewModel.changeLanguage(selectedLanguageCode)
+                        val code = appLanguages[selectedIndex].code
+                        activity?.let {
+                            viewModel.changeLanguage(it, code)
+                        }
                     },
                     onDismissRequest = { showLanguageDialog = false }
                 )

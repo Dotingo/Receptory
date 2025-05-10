@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -53,7 +56,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.data.local.database.entities.RecipeEntity
+import dev.dotingo.receptory.data.database.entities.RecipeEntity
 import dev.dotingo.receptory.presentation.components.CheckboxRow
 import dev.dotingo.receptory.presentation.components.RadioButtonRow
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
@@ -92,10 +95,13 @@ fun MainScreen(
     val selectedCategories = remember { mutableStateListOf<String>() }
     val context = LocalContext.current
 
+    val updatedRecipes by viewModel.updatedRecipes.collectAsStateWithLifecycle()
+
     LaunchedEffect(Unit) {
         viewModel.fetchAllRecipes()
         viewModel.fetchAllCategories()
     }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -125,12 +131,15 @@ fun MainScreen(
                         }
                         Icon(
                             imageVector = FilledArrowDownIcon,
-                            contentDescription = "Выбрать категорию",
+                            contentDescription = stringResource(R.string.select_category),
                             modifier = Modifier.size(smallMediumIconSize)
                         )
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.checkUpdatesNow() }) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Check for updates")
+                    }
                     IconButton(
                         onClick = {
                             navigateToSettingsScreen()
@@ -159,6 +168,29 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
+        if (updatedRecipes.isNotEmpty()) {
+            AlertDialog(
+                onDismissRequest = { viewModel.clearUpdates() },
+                title = { Text(stringResource(R.string.changes_found)) },
+                text = {
+                    Column {
+                        updatedRecipes.forEach { recipe ->
+                            Text("• ${recipe.title}")
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.applyServerUpdates() }) {
+                        Text(stringResource(R.string.download))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.clearUpdates() }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
         if (recipesList.isEmpty()) {
             EmptyMenuScreen(
                 modifier = modifier,

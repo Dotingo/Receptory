@@ -15,6 +15,12 @@ object RegistrationScreenNav
 object LoginScreenNav
 
 @Serializable
+object PrivacyPolicyScreenNav
+
+@Serializable
+object TermOfUseScreenNav
+
+@Serializable
 object MainScreenNav
 
 @Serializable

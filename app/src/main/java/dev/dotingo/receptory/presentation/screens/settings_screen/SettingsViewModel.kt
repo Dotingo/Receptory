@@ -1,31 +1,46 @@
 package dev.dotingo.receptory.presentation.screens.settings_screen
 
 import android.content.Context
+import android.util.Log
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dev.dotingo.receptory.data.local.database.dao.CategoryDao
-import dev.dotingo.receptory.data.local.database.dao.RecipeDao
-import dev.dotingo.receptory.data.local.database.entities.CategoryEntity
-import dev.dotingo.receptory.data.local.datastore.DataStoreManager
+import dev.dotingo.receptory.R
+import dev.dotingo.receptory.data.database.entities.CategoryEntity
+import dev.dotingo.receptory.data.datastore.DataStoreManager
 import dev.dotingo.receptory.di.ReceptoryApp
+import dev.dotingo.receptory.domain.repository.CategoryRepository
+import dev.dotingo.receptory.domain.repository.RecipeRepository
 import dev.dotingo.receptory.utils.AppLocaleManager
+import dev.dotingo.receptory.utils.AuthUtils
+import dev.dotingo.receptory.utils.getLocalizedContext
+import dev.dotingo.receptory.work_manager.FirebaseUploadWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val dataStore: DataStoreManager,
-    private val recipeDao: RecipeDao,
-    private val categoryDao: CategoryDao,
+    private val recipeRepository: RecipeRepository,
+    private val categoryRepository: CategoryRepository,
     private val application: ReceptoryApp,
     private val _firebaseAuth: FirebaseAuth,
     @ApplicationContext private val context: Context
@@ -50,15 +65,14 @@ class SettingsViewModel @Inject constructor(
         _settingsState.value = _settingsState.value.copy(selectedLanguage = currentLanguage)
     }
 
-    fun changeLanguage(languageCode: String) {
-        appLocaleManager.changeLanguage(context, languageCode)
+    fun changeLanguage(activity: AppCompatActivity, languageCode: String) {
+        appLocaleManager.changeLanguage(activity, languageCode)
         _settingsState.value = _settingsState.value.copy(selectedLanguage = languageCode)
-//        appLocaleManager.restartApp(context)
     }
 
     private fun loadCategories() {
         viewModelScope.launch {
-            categoryDao.getAllCategories().collect { categoryList ->
+            categoryRepository.getAllCategories().collect { categoryList ->
                 _categories.value = categoryList
             }
         }
@@ -66,54 +80,122 @@ class SettingsViewModel @Inject constructor(
 
     fun addCategory(name: String) {
         viewModelScope.launch {
-            val newCategory = CategoryEntity(categoryId = "${UUID.randomUUID()}-${auth.uid}", name = name)
-            categoryDao.insertCategory(newCategory)
+            val trimmedName = name.trim()
+            val categoryExists = _categories.value.any { it.name.equals(trimmedName, ignoreCase = true) }
+
+            if (categoryExists) {
+                Toast.makeText(
+                    application.applicationContext,
+                    context.getString(R.string.category_already_exists),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                val newCategory = CategoryEntity(
+                    categoryId = "${UUID.randomUUID()}-${auth.uid}",
+                    name = trimmedName
+                )
+                categoryRepository.insertCategory(newCategory)
+                enqueueFirebaseSync()
+            }
         }
     }
 
     fun updateCategory(category: CategoryEntity, newName: String) {
+        val languageCode = Locale.getDefault().language
+        val localizedContext = getLocalizedContext(application, languageCode)
         viewModelScope.launch {
-            val updatedCategory = category.copy(name = newName)
-            categoryDao.updateCategory(updatedCategory)
-            updateRecipesCategory(category.name, newName)
+            val trimmedNewName = newName.trim()
+            val categoryExists = _categories.value.any {
+                it.name.equals(trimmedNewName, ignoreCase = true) && it.categoryId != category.categoryId
+            }
+
+            if (categoryExists) {
+                Toast.makeText(
+                    localizedContext,
+                    localizedContext.getString(R.string.category_already_exists),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                val updatedCategory = category.copy(name = trimmedNewName)
+                categoryRepository.updateCategory(updatedCategory)
+                updateRecipesCategory(category.name, trimmedNewName)
+                enqueueFirebaseSync()
+            }
         }
     }
 
     fun deleteCategory(category: CategoryEntity) {
         viewModelScope.launch {
-            categoryDao.deleteCategory(category.categoryId)
+            categoryRepository.deleteCategory(category.categoryId)
             removeCategoryFromRecipes(category.name)
+            enqueueFirebaseSync()
         }
     }
 
     private suspend fun updateRecipesCategory(oldCategory: String, newCategory: String) {
-        val recipes = recipeDao.getAllRecipes().first()
+        val recipes = recipeRepository.getAllRecipes().first()
         recipes.forEach { recipe ->
             val updatedCategories = recipe.category.split(", ").joinToString(", ") {
                 if (it == oldCategory) newCategory else it
             }
 
             val updatedRecipe = recipe.copy(category = updatedCategories)
-            recipeDao.updateRecipe(updatedRecipe)
+            recipeRepository.updateRecipe(updatedRecipe)
         }
     }
 
     private suspend fun removeCategoryFromRecipes(categoryToRemove: String) {
-        val recipes = recipeDao.getAllRecipes().first()
+        val recipes = recipeRepository.getAllRecipes().first()
         recipes.forEach { recipe ->
             val updatedCategories = recipe.category.split(", ").filter { it != categoryToRemove }.joinToString(", ")
             val updatedRecipe = recipe.copy(category = updatedCategories)
-            recipeDao.updateRecipe(updatedRecipe)
+            recipeRepository.updateRecipe(updatedRecipe)
         }
     }
 
+    private fun enqueueFirebaseSync() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val firebaseUploadWorkRequest = OneTimeWorkRequestBuilder<FirebaseUploadWorker>()
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(application.applicationContext).enqueueUniqueWork(
+            "firebase_sync",
+            ExistingWorkPolicy.REPLACE,
+            firebaseUploadWorkRequest
+        )
+    }
+
+    @Suppress("DEPRECATION")
     fun signOut() {
         viewModelScope.launch {
-            recipeDao.deleteAllRecipes()
-            categoryDao.deleteAllCategories()
+            recipeRepository.deleteAllRecipes()
+            categoryRepository.deleteAllCategories()
             dataStore.setUserLoggedIn(false)
         }
         _firebaseAuth.signOut()
+        val token = context.getString(R.string.default_web_client_id)
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(token)
+            .requestEmail()
+            .build()
+
+        val googleSignInClient = GoogleSignIn.getClient(context, gso)
+        googleSignInClient.signOut()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("SettingsViewModel", "Google sign-out successful")
+                } else {
+                    Log.w("SettingsViewModel", "Google sign-out failed", task.exception)
+                }
+            }
+    }
+
+    fun resetPassword(email: String) {
+        AuthUtils.resetPassword(email, context)
     }
 
     fun handleScreenEvents(event: SettingsScreenEvent) {
@@ -157,5 +239,5 @@ data class SettingsScreenState(
 sealed interface SettingsScreenEvent {
     data class OpenThemeDialog(val open: Boolean = false) : SettingsScreenEvent
     data class SetNewTheme(val value: String) : SettingsScreenEvent
-    object ThemeChanged : SettingsScreenEvent
+    data object ThemeChanged : SettingsScreenEvent
 }

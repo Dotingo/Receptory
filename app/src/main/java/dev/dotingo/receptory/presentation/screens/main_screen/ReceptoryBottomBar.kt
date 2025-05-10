@@ -75,7 +75,7 @@ fun ReceptoryBottomBar(
                 onAddRecipeButtonClick()
             }
         ) {
-            Icon(PlusIcon, contentDescription = "Добавить рецепт")
+            Icon(PlusIcon, contentDescription = stringResource(R.string.add_recipe))
         }
     }
 }

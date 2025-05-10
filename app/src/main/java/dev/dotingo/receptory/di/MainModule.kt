@@ -10,12 +10,20 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import dev.dotingo.receptory.data.local.database.ReceptoryDatabase
-import dev.dotingo.receptory.data.local.database.dao.CategoryDao
-import dev.dotingo.receptory.data.local.database.dao.RecipeDao
-import dev.dotingo.receptory.data.local.database.dao.ShoppingItemDao
-import dev.dotingo.receptory.data.local.database.dao.ShoppingListDao
-import dev.dotingo.receptory.data.local.datastore.DataStoreManager
+import dev.dotingo.receptory.data.database.ReceptoryDatabase
+import dev.dotingo.receptory.data.database.dao.CategoryDao
+import dev.dotingo.receptory.data.database.dao.RecipeDao
+import dev.dotingo.receptory.data.database.dao.ShoppingItemDao
+import dev.dotingo.receptory.data.database.dao.ShoppingListDao
+import dev.dotingo.receptory.data.datastore.DataStoreManager
+import dev.dotingo.receptory.data.repository.CategoryRepositoryImpl
+import dev.dotingo.receptory.data.repository.RecipeRepositoryImpl
+import dev.dotingo.receptory.data.repository.ShoppingItemRepositoryImpl
+import dev.dotingo.receptory.data.repository.ShoppingListRepositoryImpl
+import dev.dotingo.receptory.domain.repository.CategoryRepository
+import dev.dotingo.receptory.domain.repository.RecipeRepository
+import dev.dotingo.receptory.domain.repository.ShoppingItemRepository
+import dev.dotingo.receptory.domain.repository.ShoppingListRepository
 import javax.inject.Singleton
 
 @Module
@@ -35,7 +43,6 @@ object MainModule {
             ReceptoryDatabase::class.java,
             "receptory_database"
         )
-            .fallbackToDestructiveMigration()
             .build()
     }
 
@@ -50,12 +57,36 @@ object MainModule {
     }
 
     @Provides
+    @Singleton
+    fun provideCategoryRepository(categoryDao: CategoryDao): CategoryRepository {
+        return CategoryRepositoryImpl(categoryDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecipeRepository(recipeDao: RecipeDao): RecipeRepository {
+        return RecipeRepositoryImpl(recipeDao)
+    }
+
+    @Provides
     fun provideShoppingListDao(database: ReceptoryDatabase): ShoppingListDao {
         return database.shoppingListDao()
     }
     @Provides
     fun provideShoppingItemDao(database: ReceptoryDatabase): ShoppingItemDao {
         return database.shoppingItemDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideShoppingListRepository(shoppingListDao: ShoppingListDao): ShoppingListRepository {
+        return ShoppingListRepositoryImpl(shoppingListDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideShoppingItemRepository(shoppingItemDao: ShoppingItemDao): ShoppingItemRepository {
+        return ShoppingItemRepositoryImpl(shoppingItemDao)
     }
 
     @Singleton

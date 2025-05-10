@@ -1,4 +1,4 @@
-package dev.dotingo.receptory
+package dev.dotingo.receptory.work_manager
 
 import android.content.Context
 import android.net.Uri
@@ -11,8 +11,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import dev.dotingo.receptory.data.local.database.dao.CategoryDao
-import dev.dotingo.receptory.data.local.database.dao.RecipeDao
+import dev.dotingo.receptory.domain.repository.CategoryRepository
+import dev.dotingo.receptory.domain.repository.RecipeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -24,8 +24,8 @@ import java.io.File
 class FirebaseUploadWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
-    private val recipeDao: RecipeDao,
-    private val categoryDao: CategoryDao,
+    private val recipeRepository: RecipeRepository,
+    private val categoryRepository: CategoryRepository,
     private val firebaseFirestore: FirebaseFirestore
 ) : CoroutineWorker(context, workerParams) {
 
@@ -33,7 +33,7 @@ class FirebaseUploadWorker @AssistedInject constructor(
         private const val TAG = "FirebaseUploadWorker"
     }
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO){
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val auth = FirebaseAuth.getInstance()
         val currentUser = auth.currentUser
         if (currentUser == null) {
@@ -45,9 +45,9 @@ class FirebaseUploadWorker @AssistedInject constructor(
             currentUser.getIdToken(true).await()
             Log.d(TAG, "Worker started")
 
-            val localRecipes = recipeDao.getAllRecipes().first()
+            val localRecipes = recipeRepository.getAllRecipes().first()
                 .map { it.copy(userId = currentUser.uid) }
-            val localCategories = categoryDao.getAllCategories().first()
+            val localCategories = categoryRepository.getAllCategories().first()
                 .map { it.copy(userId = currentUser.uid) }
 
             val localRecipeIds = localRecipes.map { it.recipeId }.toSet()
@@ -76,7 +76,8 @@ class FirebaseUploadWorker @AssistedInject constructor(
                     batch.delete(docRef)
                     Log.d(TAG, "Deleted recipe: ${document.id}")
 
-                    val imageRef = FirebaseStorage.getInstance().reference.child("recipeImages/${document.id}.jpg")
+                    val imageRef =
+                        FirebaseStorage.getInstance().reference.child("recipeImages/${document.id}.jpg")
                     try {
                         imageRef.delete().await()
                         Log.d(TAG, "Deleted image: ${document.id}.jpg")
@@ -114,9 +115,9 @@ class FirebaseUploadWorker @AssistedInject constructor(
 
                         }
                     }
-                }
-                else if (recipe.imageUrl.isEmpty()) {
-                    val imageRef = FirebaseStorage.getInstance().reference.child("recipeImages/${recipe.recipeId}.jpg")
+                } else if (recipe.imageUrl.isEmpty()) {
+                    val imageRef =
+                        FirebaseStorage.getInstance().reference.child("recipeImages/${recipe.recipeId}.jpg")
                     try {
                         imageRef.delete().await()
                         Log.d(TAG, "Deleted image: ${recipe.recipeId}.jpg")
@@ -124,12 +125,14 @@ class FirebaseUploadWorker @AssistedInject constructor(
                         Log.e(TAG, "Error deleting image", e)
                     }
                 }
-                val docRef = firebaseFirestore.collection("recipes").document(updatedRecipe.recipeId)
+                val docRef =
+                    firebaseFirestore.collection("recipes").document(updatedRecipe.recipeId)
                 batch.set(docRef, updatedRecipe)
             }
 
             localCategories.forEach { category ->
-                val docRef = firebaseFirestore.collection("categories").document(category.categoryId)
+                val docRef =
+                    firebaseFirestore.collection("categories").document(category.categoryId)
                 batch.set(docRef, category)
             }
 

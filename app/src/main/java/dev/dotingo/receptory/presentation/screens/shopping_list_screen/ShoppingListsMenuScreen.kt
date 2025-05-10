@@ -47,7 +47,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.dotingo.receptory.R
-import dev.dotingo.receptory.data.local.database.entities.ShoppingListEntity
+import dev.dotingo.receptory.data.database.entities.ShoppingListEntity
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryInputField
 import dev.dotingo.receptory.ui.icons.EditIconPadded

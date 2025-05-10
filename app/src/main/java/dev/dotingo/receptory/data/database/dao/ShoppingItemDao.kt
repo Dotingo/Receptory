@@ -1,11 +1,11 @@
-package dev.dotingo.receptory.data.local.database.dao
+package dev.dotingo.receptory.data.database.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import dev.dotingo.receptory.data.local.database.entities.ShoppingItemEntity
+import dev.dotingo.receptory.data.database.entities.ShoppingItemEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

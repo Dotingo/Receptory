@@ -1,50 +1,34 @@
 package dev.dotingo.receptory.presentation.screens.timer_screen
 
-import android.util.Log
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,22 +37,11 @@ import dev.dotingo.receptory.R
 import dev.dotingo.receptory.presentation.components.CircleIcon
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.ui.icons.ClearInputIcon
-import dev.dotingo.receptory.ui.icons.CloseIcon
-import dev.dotingo.receptory.ui.icons.FinishIcon
-import dev.dotingo.receptory.ui.icons.PauseIcon
-import dev.dotingo.receptory.ui.icons.PlayIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
-import dev.dotingo.receptory.ui.icons.arrows.RefreshIcon
-import dev.dotingo.receptory.ui.theme.Dimens.buttonShapeSize
 import dev.dotingo.receptory.ui.theme.Dimens.circleTimerButtonSize
-import dev.dotingo.receptory.ui.theme.Dimens.circleTimerProgressLineSize
-import dev.dotingo.receptory.ui.theme.Dimens.circleTimerProgressSize
 import dev.dotingo.receptory.ui.theme.Dimens.commonHorizontalPadding
 import dev.dotingo.receptory.ui.theme.Dimens.extraBigPadding
-import dev.dotingo.receptory.ui.theme.Dimens.extraSmallPadding
-import dev.dotingo.receptory.ui.theme.Dimens.mediumIconSize
 import dev.dotingo.receptory.ui.theme.Dimens.smallPadding
-import dev.dotingo.receptory.ui.theme.Dimens.timerControlsButtonSize
 import dev.dotingo.receptory.ui.theme.Dimens.tinyPadding
 import dev.dotingo.receptory.utils.clickVibration
 import java.util.Locale
@@ -80,10 +53,9 @@ fun TimerScreen(
     timerViewModel: TimerViewModel = hiltViewModel(),
     navigateBack: () -> Unit
 ) {
-    val showTimer by timerViewModel.showTimer.collectAsStateWithLifecycle()
     val timerText by timerViewModel.timerText.collectAsStateWithLifecycle()
-    val isPlaying by timerViewModel.isPlaying.collectAsStateWithLifecycle()
-    val isFinished by timerViewModel.isTimerFinished.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -97,56 +69,31 @@ fun TimerScreen(
                     )
                 }
             )
+        },
+        bottomBar = {
+            val timerName = stringResource(R.string.timer_name)
+            ReceptoryMainButton(
+                modifier = Modifier
+                    .padding(top = smallPadding)
+                    .padding(horizontal = commonHorizontalPadding)
+                    .navigationBarsPadding(),
+                text = stringResource(R.string.add_timer),
+                enabled = timerText != "00:00:00"
+            ) {
+                timerViewModel.startSystemTimer(context, timerName)
+            }
         }
     ) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
+                .padding(innerPadding)
         ) {
-            if (showTimer) {
-                TimerCard(
-                    timerViewModel = timerViewModel,
-                    circleModifier = Modifier.size(circleTimerProgressSize)
-                )
-                Spacer(Modifier.weight(1f))
-
-                TimerControls(
-                    isPlaying = isPlaying,
-                    isFinished = isFinished,
-                    addMinuteClick = {
-                        timerViewModel.addMinute()
-                    },
-                    stopCountDownTimer = {
-                        timerViewModel.stopCountDownTimer()
-                    },
-                    resetCountDownTimer = {
-                        timerViewModel.resetCountDownTimer()
-                    },
-                    startCountDownTimer = {
-                        timerViewModel.startCountDownTimer()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = extraBigPadding)
-                        .navigationBarsPadding(),
-                )
-            } else {
-                TimerInput(
-                    modifier = Modifier
-                        .weight(1f),
-                    viewModel = timerViewModel
-                )
-                ReceptoryMainButton(
-                    modifier = Modifier
-                        .padding(top = smallPadding)
-                        .navigationBarsPadding(),
-                    text = stringResource(R.string.add_timer),
-                    enabled = timerText != "00:00:00"
-                ) {
-                    timerViewModel.setShowTimer(true)
-                }
-            }
+            TimerInput(
+                modifier = Modifier
+                    .weight(1f),
+                viewModel = timerViewModel
+            )
         }
     }
 }
@@ -194,6 +141,7 @@ fun TimerInput(modifier: Modifier = Modifier, viewModel: TimerViewModel) {
     }
 }
 
+
 private fun formatTime(input: String, viewModel: TimerViewModel): AnnotatedString {
     val digits = input.padStart(6, '0')
     val hours = digits.take(digits.length - 4).toIntOrNull() ?: 0
@@ -202,15 +150,22 @@ private fun formatTime(input: String, viewModel: TimerViewModel): AnnotatedStrin
 
     viewModel.setUserTime(hours.toLong(), minutes.toLong(), seconds.toLong())
 
+    val locale = Locale.getDefault()
+    val isEnglish = locale.language == "en"
+
+    val hourLabel = if (isEnglish) "h" else "ч"
+    val minuteLabel = if (isEnglish) "m" else "м"
+    val secondLabel = if (isEnglish) "s" else "с"
+
     return buildAnnotatedString {
-        append(String.format(Locale("ru"), "%02d", hours))
-        withStyle(SpanStyle(fontSize = 20.sp)) { append("ч ") }
+        append(String.format(locale, "%02d", hours))
+        withStyle(SpanStyle(fontSize = 20.sp)) { append("$hourLabel ") }
 
-        append(String.format(Locale("ru"), "%02d", minutes))
-        withStyle(SpanStyle(fontSize = 20.sp)) { append("м ") }
+        append(String.format(locale, "%02d", minutes))
+        withStyle(SpanStyle(fontSize = 20.sp)) { append("$minuteLabel ") }
 
-        append(String.format(Locale("ru"), "%02d", seconds))
-        withStyle(SpanStyle(fontSize = 20.sp)) { append("с") }
+        append(String.format(locale, "%02d", seconds))
+        withStyle(SpanStyle(fontSize = 20.sp)) { append(secondLabel) }
     }
 }
 
@@ -268,164 +223,3 @@ private fun KeyButton(key: String, onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun TimerCard(
-    timerViewModel: TimerViewModel,
-    circleModifier: Modifier = Modifier,
-    circleColor: Color = MaterialTheme.colorScheme.primary,
-    backCircleColor: Color = MaterialTheme.colorScheme.primaryContainer
-) {
-    val progress by timerViewModel.circleProgress.collectAsStateWithLifecycle()
-    val timerText by timerViewModel.timerText.collectAsStateWithLifecycle()
-    val isTimerFinished by timerViewModel.isTimerFinished.collectAsStateWithLifecycle()
-
-    LaunchedEffect(isTimerFinished) {
-        if (isTimerFinished) {
-            Log.d("TimerCard", "LaunchedEffect triggered: isTimerFinished = true. Calling playAlarmSound.")
-            timerViewModel.playAlarmSound()
-        } else {
-            timerViewModel.stopAlarmSound()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        timerViewModel.startCountDownTimer()
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.7f)
-            .padding(horizontal = commonHorizontalPadding)
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(smallPadding)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircleIcon(
-                imageVector = CloseIcon,
-                modifier = Modifier
-                    .size(mediumIconSize)
-                    .align(Alignment.TopEnd),
-                backgroundColor = MaterialTheme.colorScheme.secondary,
-                iconColor = MaterialTheme.colorScheme.onSecondary
-            ) {
-                timerViewModel.hideTimerAndCleanup()
-//                timerViewModel.setShowTimer(false)
-            }
-            Box(
-                modifier = circleModifier
-                    .padding(top = smallPadding)
-                    .aspectRatio(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(modifier = circleModifier) {
-                    drawArc(
-                        color = backCircleColor,
-                        startAngle = -90f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        style = Stroke(
-                            width = circleTimerProgressLineSize.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                    )
-                    drawArc(
-                        color = circleColor,
-                        sweepAngle = 360 * progress,
-                        startAngle = -90f,
-                        useCenter = false,
-                        style = Stroke(
-                            width = circleTimerProgressLineSize.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                    )
-                }
-                Text(
-                    text = timerText,
-                    fontSize = 36.sp
-                )
-                IconButton(
-                    onClick = { timerViewModel.resetCountDownTimer() },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = smallPadding)
-                ) {
-                    Icon(
-                        imageVector = RefreshIcon,
-                        contentDescription = "Сбросить время",
-                        modifier = Modifier.size(mediumIconSize),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TimerControls(
-    isPlaying: Boolean,
-    isFinished: Boolean,
-    addMinuteClick: () -> Unit,
-    stopCountDownTimer: () -> Unit,
-    startCountDownTimer: () -> Unit,
-    resetCountDownTimer: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        if (!isFinished) {
-            Button(
-                onClick = {
-                    addMinuteClick()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                modifier = Modifier.height(timerControlsButtonSize),
-                shape = RoundedCornerShape(buttonShapeSize),
-            ) {
-                Text(
-                    "+1:00", color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(Modifier.width(extraSmallPadding))
-        }
-
-        Button(
-            onClick = {
-                if (isPlaying) {
-                    stopCountDownTimer()
-                } else if (isFinished) {
-                    resetCountDownTimer()
-                } else {
-                    startCountDownTimer()
-                }
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ),
-            modifier = Modifier.height(timerControlsButtonSize),
-            shape = RoundedCornerShape(buttonShapeSize),
-        ) {
-            Icon(
-                imageVector = if (isPlaying) {
-                    PauseIcon
-                } else if (isFinished) {
-                    FinishIcon
-                } else {
-                    PlayIcon
-                },
-                contentDescription = "",
-                modifier = Modifier.padding(smallPadding),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}

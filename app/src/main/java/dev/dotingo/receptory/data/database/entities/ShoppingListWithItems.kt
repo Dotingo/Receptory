@@ -1,8 +1,10 @@
-package dev.dotingo.receptory.data.local.database.entities
+package dev.dotingo.receptory.data.database.entities
 
+import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Relation
 
+@Keep
 data class ShoppingListWithItems(
     @Embedded val shoppingList: ShoppingListEntity,
     @Relation(

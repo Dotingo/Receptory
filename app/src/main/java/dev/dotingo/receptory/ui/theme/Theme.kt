@@ -124,6 +124,10 @@ fun ReceptoryTheme(
         val window = (view.context as Activity).window
         WindowCompat.getInsetsController(window, window.decorView)
             .isAppearanceLightStatusBars = colorScheme == lightColorScheme
+        WindowCompat.getInsetsController(window, window.decorView)
+            .isAppearanceLightNavigationBars = colorScheme == lightColorScheme
+        WindowCompat.getInsetsController(window, window.decorView)
+            .isAppearanceLightStatusBars = false
     }
 
     MaterialTheme(

@@ -3,10 +3,7 @@ package dev.dotingo.receptory.utils
 import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
-import android.os.LocaleList
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 
 data class Language(
     val code: String,
@@ -19,18 +16,6 @@ val appLanguages = listOf(
 )
 
 class AppLocaleManager {
-
-    fun changeLanguage(activity: AppCompatActivity, languageCode: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            activity.getSystemService(LocaleManager::class.java)
-                ?.applicationLocales = LocaleList.forLanguageTags(languageCode)
-        } else {
-            AppCompatDelegate.setApplicationLocales(
-                LocaleListCompat.forLanguageTags(languageCode)
-            )
-        }
-        activity.recreate()
-    }
 
     fun getLanguageCode(context: Context,): String {
         val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

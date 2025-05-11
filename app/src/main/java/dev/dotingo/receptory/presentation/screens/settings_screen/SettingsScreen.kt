@@ -223,7 +223,7 @@ fun SettingsScreen(
                     onSubmitButtonClick = { selectedIndex ->
                         val code = appLanguages[selectedIndex].code
                         activity?.let {
-                            viewModel.changeLanguage(it, code)
+                            viewModel.changeLanguage(code)
                         }
                     },
                     onDismissRequest = { showLanguageDialog = false }

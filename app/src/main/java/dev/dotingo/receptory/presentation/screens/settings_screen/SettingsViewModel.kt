@@ -3,7 +3,8 @@ package dev.dotingo.receptory.presentation.screens.settings_screen
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
@@ -65,8 +66,8 @@ class SettingsViewModel @Inject constructor(
         _settingsState.value = _settingsState.value.copy(selectedLanguage = currentLanguage)
     }
 
-    fun changeLanguage(activity: AppCompatActivity, languageCode: String) {
-        appLocaleManager.changeLanguage(activity, languageCode)
+    fun changeLanguage(languageCode: String) {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageCode))
         _settingsState.value = _settingsState.value.copy(selectedLanguage = languageCode)
     }
 

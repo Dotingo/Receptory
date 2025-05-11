@@ -81,7 +81,8 @@ class SettingsViewModel @Inject constructor(
     fun addCategory(name: String) {
         viewModelScope.launch {
             val trimmedName = name.trim()
-            val categoryExists = _categories.value.any { it.name.equals(trimmedName, ignoreCase = true) }
+            val categoryExists =
+                _categories.value.any { it.name.equals(trimmedName, ignoreCase = true) }
 
             if (categoryExists) {
                 Toast.makeText(
@@ -106,7 +107,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val trimmedNewName = newName.trim()
             val categoryExists = _categories.value.any {
-                it.name.equals(trimmedNewName, ignoreCase = true) && it.categoryId != category.categoryId
+                it.name.equals(
+                    trimmedNewName,
+                    ignoreCase = true
+                ) && it.categoryId != category.categoryId
             }
 
             if (categoryExists) {
@@ -135,9 +139,12 @@ class SettingsViewModel @Inject constructor(
     private suspend fun updateRecipesCategory(oldCategory: String, newCategory: String) {
         val recipes = recipeRepository.getAllRecipes().first()
         recipes.forEach { recipe ->
-            val updatedCategories = recipe.category.split(", ").joinToString(", ") {
-                if (it == oldCategory) newCategory else it
-            }
+            val updatedCategories = recipe.category
+                .split(",")
+                .map { it.trim() }
+                .joinToString(", ") {
+                    if (it == oldCategory.trim()) newCategory.trim() else it
+                }
 
             val updatedRecipe = recipe.copy(category = updatedCategories)
             recipeRepository.updateRecipe(updatedRecipe)
@@ -147,7 +154,11 @@ class SettingsViewModel @Inject constructor(
     private suspend fun removeCategoryFromRecipes(categoryToRemove: String) {
         val recipes = recipeRepository.getAllRecipes().first()
         recipes.forEach { recipe ->
-            val updatedCategories = recipe.category.split(", ").filter { it != categoryToRemove }.joinToString(", ")
+            val updatedCategories = recipe.category
+                .split(",")
+                .map { it.trim() }
+                .filter { it != categoryToRemove.trim() }
+                .joinToString(", ")
             val updatedRecipe = recipe.copy(category = updatedCategories)
             recipeRepository.updateRecipe(updatedRecipe)
         }

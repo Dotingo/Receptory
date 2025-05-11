@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Receptory</string>
+    <string name="app_name">Рецептурий</string>
     <string name="info_title_recipe">Добавляйте ваши рецепты</string>
     <string name="info_description_recipe">Записывайте рецепты на любой вкус</string>
     <string name="info_title_cooking">Готовьте вместе с приложением</string>
@@ -9,7 +9,7 @@
     <string name="info_title_search">Ищите ваши рецепты</string>
     <string name="info_description_search">Добавляйте рецепты в категории, фильтруйте, сортируйте и используйте поиск для быстрого нахождения нужного рецепта</string>
     <string name="info_title_storage">Удобно храните рецепты</string>
-    <string name="info_description_storage">Храните ваши рецепты удаленно, войдя в аккаунт, или локально, не входя в него</string>
+    <string name="info_description_storage">Храните ваши рецепты удаленно на сервере и локально на вашем устройстве</string>
     <string name="app_capabilities_title">Возможности</string>
     <string name="understood_button">Понятно</string>
     <string name="welcome">Добро пожаловать</string>

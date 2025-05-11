@@ -15,14 +15,17 @@ junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 kotlinxCoroutinesPlayServices = "1.9.0"
+kotlinxCoroutinesTest = "1.7.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
 composeBom = "2025.04.00"
 lifecycleService = "2.8.7"
 lifecycleViewmodelKtx = "2.8.7"
 lottieCompose = "6.5.2"
+mockk = "1.13.5"
 navigationCompose = "2.8.9"
 playServicesAuth = "21.3.0"
+turbine = "1.0.0"
 uiTextGoogleFonts = "1.7.8"
 serialization = "1.7.3"
 workRuntimeKtx = "2.10.0"
@@ -62,6 +65,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room-ktx
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
 
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore-preferences" }
@@ -91,7 +95,9 @@ androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text
 
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
 
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 zxcvbn = { module = "com.nulab-inc:zxcvbn", version.ref = "zxcvbn" }
 
 [plugins]

@@ -57,6 +57,7 @@ fun CategoryEditDialog(
             .split(",")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
+            .toSet()
     }
 
     var selectedItemsText by remember { mutableStateOf(uiState.selectedCategories) }
@@ -130,17 +131,17 @@ fun CategoryEditDialog(
                                 it.name.contains(searchQuery, ignoreCase = true)
                             }
                             items(filteredCategories) { item ->
-                                val isSelected = selectedCategories.contains(item.name)
-                                CheckboxRow(text = item.name, checked = isSelected) {
-                                    viewModel.toggleCategory(item.name)
+                                CheckboxRow(
+                                    text = item.name,
+                                    checked = selectedCategories.contains(item.name.trim()),
+                                ) {
+                                    viewModel.toggleCategory(item.name.trim())
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         TextButton(
                             onClick = {
-                                selectedItemsText = uiState.selectedCategories
-                                viewModel.setSelectedCategories(selectedCategories)
                                 expanded = false
                             },
                             modifier = Modifier.align(Alignment.End)

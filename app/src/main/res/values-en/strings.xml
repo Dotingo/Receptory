@@ -11,7 +11,7 @@
     <string name="info_title_search">Search your recipes</string>
     <string name="info_description_search">Add recipes to categories, filter, sort, and use search to quickly find the recipe you need</string>
     <string name="info_title_storage">Store recipes conveniently</string>
-    <string name="info_description_storage">Store your recipes remotely by logging into your account or locally without signing in</string>
+    <string name="info_description_storage">Store your recipes remotely on the server and locally on your device</string>
     <string name="app_capabilities_title">Capabilities</string>
     <string name="understood_button">Got it</string>
     <string name="welcome">Welcome</string>

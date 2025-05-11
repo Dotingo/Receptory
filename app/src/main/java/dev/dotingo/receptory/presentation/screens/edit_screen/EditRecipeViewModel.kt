@@ -102,22 +102,22 @@ class EditRecipeViewModel @Inject constructor(
         }
     }
 
-    fun toggleCategory(categoryName: String) {
-        val current = _uiState.value.selectedCategories.split(",")
+    fun toggleCategory(category: String) {
+        val current = _uiState.value.selectedCategories
+            .split(",")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .toMutableSet()
 
-        if (current.contains(categoryName)) {
-            current.remove(categoryName)
+        if (current.contains(category.trim())) {
+            current.remove(category.trim())
         } else {
-            current.add(categoryName)
+            current.add(category.trim())
         }
-        _uiState.value = _uiState.value.copy(selectedCategories = current.joinToString(", "))
-    }
 
-    fun setSelectedCategories(categories: List<String>) {
-        _uiState.value = _uiState.value.copy(selectedCategories = categories.joinToString(", "))
+        _uiState.update {
+            it.copy(selectedCategories = current.joinToString(","))
+        }
     }
 
     private fun loadRecipeByKey(key: String) {

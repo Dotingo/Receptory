@@ -456,7 +456,12 @@ private fun CookingStepsSection(
             }
             Spacer(Modifier.height(smallPadding))
 
-            cookingSteps.lines().forEachIndexed { index, step ->
+            val nonEmptySteps = cookingSteps
+                .lines()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+
+            nonEmptySteps.forEachIndexed { index, step ->
                 var isSelected by rememberSaveable { mutableStateOf(false) }
                 Column(
                     modifier = Modifier

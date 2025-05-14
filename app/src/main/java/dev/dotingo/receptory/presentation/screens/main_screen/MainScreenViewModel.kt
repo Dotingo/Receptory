@@ -18,6 +18,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.dotingo.receptory.work_manager.FirebaseUploadWorker
 import dev.dotingo.receptory.R
 import dev.dotingo.receptory.R.string.recipe_description
+import dev.dotingo.receptory.constants.FirebaseConstants
 import dev.dotingo.receptory.data.database.entities.CategoryEntity
 import dev.dotingo.receptory.data.database.entities.RecipeEntity
 import dev.dotingo.receptory.domain.repository.CategoryRepository
@@ -80,8 +81,8 @@ class MainScreenViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 //рецепты
-                val recipeSnapshot = firebaseFirestore.collection("recipes")
-                    .whereEqualTo("userId", userId)
+                val recipeSnapshot = firebaseFirestore.collection(FirebaseConstants.RECIPES)
+                    .whereEqualTo(FirebaseConstants.USER_ID_FIELD, userId)
                     .get()
                     .await()
                 val serverRecipeList = recipeSnapshot.toObjects(RecipeEntity::class.java)
@@ -101,8 +102,8 @@ class MainScreenViewModel @Inject constructor(
                 _updatedRecipes.value = updatedOrNew + deleted
 
                 //категории
-                val categorySnapshot = firebaseFirestore.collection("categories")
-                    .whereEqualTo("userId", userId)
+                val categorySnapshot = firebaseFirestore.collection(FirebaseConstants.CATEGORIES)
+                    .whereEqualTo(FirebaseConstants.USER_ID_FIELD, userId)
                     .get()
                     .await()
                 val serverCategoryList = categorySnapshot.toObjects(CategoryEntity::class.java)
@@ -134,8 +135,8 @@ class MainScreenViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 //рецепты
-                val recipeSnapshot = firebaseFirestore.collection("recipes")
-                    .whereEqualTo("userId", userId)
+                val recipeSnapshot = firebaseFirestore.collection(FirebaseConstants.RECIPES)
+                    .whereEqualTo(FirebaseConstants.USER_ID_FIELD, userId)
                     .get()
                     .await()
                 val serverRecipeList = recipeSnapshot.toObjects(RecipeEntity::class.java)
@@ -188,8 +189,8 @@ class MainScreenViewModel @Inject constructor(
                 _updatedRecipes.value = emptyList()
 
                 //категории
-                val categorySnapshot = firebaseFirestore.collection("categories")
-                    .whereEqualTo("userId", userId)
+                val categorySnapshot = firebaseFirestore.collection(FirebaseConstants.CATEGORIES)
+                    .whereEqualTo(FirebaseConstants.USER_ID_FIELD, userId)
                     .get()
                     .await()
                 val serverCategoryList = categorySnapshot.toObjects(CategoryEntity::class.java)

@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.nulabinc.zxcvbn.Zxcvbn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.dotingo.receptory.R
+import dev.dotingo.receptory.constants.FirebaseConstants
 import dev.dotingo.receptory.data.database.entities.CategoryEntity
 import dev.dotingo.receptory.data.database.entities.RecipeEntity
 import dev.dotingo.receptory.data.datastore.DataStoreManager
@@ -83,8 +84,8 @@ class AuthorizationViewModel @Inject constructor(
     private suspend fun fetchAndSaveUserData(userId: String) = withContext(Dispatchers.IO) {
         try {
             val recipesSnapshot = firebaseFirestore
-                .collection("recipes")
-                .whereEqualTo("userId", userId)
+                .collection(FirebaseConstants.RECIPES)
+                .whereEqualTo(FirebaseConstants.USER_ID_FIELD, userId)
                 .get()
                 .await()
             val recipes = recipesSnapshot.toObjects(RecipeEntity::class.java)
@@ -105,8 +106,8 @@ class AuthorizationViewModel @Inject constructor(
             }
             recipeRepository.insertAllRecipes(updatedRecipes)
             val categoriesSnapshot = firebaseFirestore
-                .collection("categories")
-                .whereEqualTo("userId", userId)
+                .collection(FirebaseConstants.CATEGORIES)
+                .whereEqualTo(FirebaseConstants.USER_ID_FIELD, userId)
                 .get()
                 .await()
             val categories = categoriesSnapshot.toObjects(CategoryEntity::class.java)

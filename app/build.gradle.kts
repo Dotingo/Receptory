@@ -16,17 +16,18 @@ android {
         applicationId = "dev.dotingo.receptory"
         minSdk = 24
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
-
+        versionCode = 5
+        versionName = "1.1.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
     }
 
-    androidResources{
-        generateLocaleConfig = true
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
 
     testOptions{

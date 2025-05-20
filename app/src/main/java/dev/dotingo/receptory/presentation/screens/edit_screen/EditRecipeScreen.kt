@@ -65,7 +65,6 @@ import dev.dotingo.receptory.presentation.components.ReceptoryLargeInputField
 import dev.dotingo.receptory.presentation.components.ReceptoryMainButton
 import dev.dotingo.receptory.ui.icons.CloseIcon
 import dev.dotingo.receptory.ui.icons.StarIcon
-import dev.dotingo.receptory.ui.icons.WebIcon
 import dev.dotingo.receptory.ui.icons.arrows.BackArrowIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteBoldIcon
 import dev.dotingo.receptory.ui.icons.favorite.FavoriteOutlinedIcon
@@ -123,19 +122,6 @@ fun EditRecipeScreen(
                     contentDescription = stringResource(R.string.go_back)
                 ) {
                     navigateBack()
-                }
-            },
-            actions = {
-                if (key.isEmpty()) {
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            imageVector = WebIcon,
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            contentDescription = stringResource(R.string.add_interner_recipe)
-                        )
-                    }
                 }
             })
     }, bottomBar = {
